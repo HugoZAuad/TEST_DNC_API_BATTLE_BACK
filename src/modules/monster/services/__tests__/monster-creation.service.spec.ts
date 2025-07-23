@@ -20,6 +20,7 @@ describe('MonsterCreationService', () => {
       defense: 5,
       speed: 7,
       specialAbility: 'Stealth',
+      playerId: 1,
     };
     const expectedMonster = { id: 1, ...inputData, createdAt: new Date(), updatedAt: new Date() };
 

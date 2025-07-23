@@ -1,16 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { Monster } from '@prisma/client';
 import { MonsterRepository } from '../repositories/monster.repository';
 
 @Injectable()
-export class MonsterQueryService {
+export class MonsterFindAllService {
   constructor(private readonly monsterRepository: MonsterRepository) {}
 
-  async findAll(): Promise<Monster[]> {
+  async findAll() {
     return this.monsterRepository.findAll();
-  }
-
-  async findById(id: number): Promise<Monster | null> {
-    return this.monsterRepository.findById(id);
   }
 }

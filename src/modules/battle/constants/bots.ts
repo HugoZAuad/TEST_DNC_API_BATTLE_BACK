@@ -1,0 +1,58 @@
+import { PlayerState } from '../interfaces/interfaces/player-state.interface';
+
+export const bots: PlayerState[] = [
+  {
+    playerId: 'bot1',
+    hp: 100,
+    attack: 15,
+    defense: 5,
+    speed: 10,
+    specialAbility: 'Fireball',
+    isBot: true,
+  },
+  {
+    playerId: 'bot2',
+    hp: 90,
+    attack: 18,
+    defense: 4,
+    speed: 12,
+    specialAbility: 'Ice Blast',
+    isBot: true,
+  },
+  {
+    playerId: 'bot3',
+    hp: 110,
+    attack: 12,
+    defense: 6,
+    speed: 8,
+    specialAbility: 'Thunder Strike',
+    isBot: true,
+  },
+  {
+    playerId: 'bot4',
+    hp: 95,
+    attack: 14,
+    defense: 7,
+    speed: 9,
+    specialAbility: 'Poison Dart',
+    isBot: true,
+  },
+  {
+    playerId: 'bot5',
+    hp: 105,
+    attack: 13,
+    defense: 5,
+    speed: 11,
+    specialAbility: 'Wind Slash',
+    isBot: true,
+  },
+  {
+    playerId: 'bot6',
+    hp: 100,
+    attack: 16,
+    defense: 6,
+    speed: 10,
+    specialAbility: 'Earthquake',
+    isBot: true,
+  },
+];

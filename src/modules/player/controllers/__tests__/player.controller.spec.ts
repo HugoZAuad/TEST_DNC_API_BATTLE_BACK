@@ -1,91 +1,115 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
-import { PlayerModule } from '../../player.module';
-import { PlayerRepository } from '../../repositories/player.repository';
+import { PlayerController } from '../player.controller';
+import { PlayerCreateService } from '../../services/player-create.service';
+import { PlayerUpdateService } from '../../services/player-update.service';
+import { PlayerDeleteService } from '../../services/player-delete.service';
+import { PlayerFindAllService } from '../../services/player-find-all.service';
+import { PlayerFindByIdService } from '../../services/player-find-by-id.service';
+import { PlayerFindByNameService } from '../../services/player-find-by-name.service';
 
-describe('PlayerController (integração)', () => {
-  let app: INestApplication;
+describe('PlayerController', () => {
+  let controller: PlayerController;
+  let createService: PlayerCreateService;
+  let updateService: PlayerUpdateService;
+  let deleteService: PlayerDeleteService;
+  let findAllService: PlayerFindAllService;
+  let findByIdService: PlayerFindByIdService;
+  let findByNameService: PlayerFindByNameService;
 
-  beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [PlayerModule],
-    })
-      .overrideProvider(PlayerRepository)
-      .useValue({
-        findById: jest.fn().mockImplementation((id: number) => {
-          if (id === 1) {
-            return Promise.resolve({ id: 1, username: 'JogadorTeste' });
-          }
-          return Promise.resolve(null);
-        }),
-        create: jest.fn().mockImplementation((name: string) => {
-          return Promise.resolve({ id: 1, username: name });
-        }),
-        update: jest.fn().mockImplementation((id: number, name: string) => {
-          if (id === 1) {
-            return Promise.resolve({ id: 1, username: name });
-          }
-          return Promise.reject({ status: 404 });
-        }),
-        delete: jest.fn().mockImplementation((id: number) => {
-          if (id === 1) {
-            return Promise.resolve();
-          }
-          return Promise.reject({ status: 404 });
-        }),
-      })
-      .compile();
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [PlayerController],
+      providers: [
+        {
+          provide: PlayerCreateService,
+          useValue: { createPlayer: jest.fn() },
+        },
+        {
+          provide: PlayerUpdateService,
+          useValue: { updatePlayer: jest.fn() },
+        },
+        {
+          provide: PlayerDeleteService,
+          useValue: { deletePlayer: jest.fn() },
+        },
+        {
+          provide: PlayerFindAllService,
+          useValue: { findAll: jest.fn() },
+        },
+        {
+          provide: PlayerFindByIdService,
+          useValue: { findById: jest.fn() },
+        },
+        {
+          provide: PlayerFindByNameService,
+          useValue: { findByName: jest.fn() },
+        },
+      ],
+    }).compile();
 
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
-    await app.init();
+    controller = module.get<PlayerController>(PlayerController);
+    createService = module.get<PlayerCreateService>(PlayerCreateService);
+    updateService = module.get<PlayerUpdateService>(PlayerUpdateService);
+    deleteService = module.get<PlayerDeleteService>(PlayerDeleteService);
+    findAllService = module.get<PlayerFindAllService>(PlayerFindAllService);
+    findByIdService = module.get<PlayerFindByIdService>(PlayerFindByIdService);
+    findByNameService = module.get<PlayerFindByNameService>(PlayerFindByNameService);
   });
 
-  afterAll(async () => {
-    await app.close();
+  it('deve estar definido', () => {
+    expect(controller).toBeDefined();
   });
 
-  let createdPlayerId: number;
+  it('deve chamar findAllService.findAll e retornar resultado', async () => {
+    const players = [{ id: 1, username: 'player1', createdAt: new Date(), updatedAt: new Date() }];
+    jest.spyOn(findAllService, 'findAll').mockResolvedValue(players);
 
-  it('deve criar um jogador com sucesso', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/players')
-      .send({ name: 'JogadorTeste' })
-      .expect(201);
-
-    expect(response.body).toHaveProperty('id');
-    createdPlayerId = response.body.id;
+    const result = await controller.findAll();
+    expect(findAllService.findAll).toHaveBeenCalled();
+    expect(result).toEqual(players);
   });
 
-  it('deve atualizar um jogador com sucesso', async () => {
-    const response = await request(app.getHttpServer())
-      .patch(`/players/${createdPlayerId}`)
-      .send({ name: 'JogadorAtualizado' })
-      .expect(200);
+  it('deve chamar findByIdService.findById e retornar resultado', async () => {
+    const player = { id: 1, username: 'player1', createdAt: new Date(), updatedAt: new Date() };
+    jest.spyOn(findByIdService, 'findById').mockResolvedValue(player);
 
-    expect(response.body).toHaveProperty('id', createdPlayerId);
-    expect(response.body).toHaveProperty('username', 'JogadorAtualizado');
+    const result = await controller.findById(1);
+    expect(findByIdService.findById).toHaveBeenCalledWith(1);
+    expect(result).toEqual(player);
   });
 
-  it('deve retornar erro ao atualizar jogador inexistente', async () => {
-    await request(app.getHttpServer())
-      .patch('/players/999999')
-      .send({ name: 'NomeQualquer' })
-      .expect(404);
+  it('deve chamar findByNameService.findByName e retornar resultado', async () => {
+    const player = { id: 1, username: 'player1', createdAt: new Date(), updatedAt: new Date() };
+    jest.spyOn(findByNameService, 'findByName').mockResolvedValue(player);
+
+    const result = await controller.findByName('player1');
+    expect(findByNameService.findByName).toHaveBeenCalledWith('player1');
+    expect(result).toEqual(player);
   });
 
-  it('deve deletar um jogador com sucesso', async () => {
-    const response = await request(app.getHttpServer())
-      .delete(`/players/${createdPlayerId}`)
-      .expect(200);
+  it('deve chamar playerCreateService.createPlayer e retornar resultado', async () => {
+    const createdPlayer = { id: 1, username: 'newPlayer', createdAt: new Date(), updatedAt: new Date() };
+    jest.spyOn(createService, 'createPlayer').mockResolvedValue(createdPlayer);
 
-    expect(response.body).toHaveProperty('message');
+    const result = await controller.createPlayer({ name: 'newPlayer' });
+    expect(createService.createPlayer).toHaveBeenCalledWith('newPlayer');
+    expect(result).toEqual(createdPlayer);
   });
 
-  it('deve retornar erro ao deletar jogador inexistente', async () => {
-    await request(app.getHttpServer())
-      .delete('/players/999999')
-      .expect(404);
+  it('deve chamar playerUpdateService.updatePlayer e retornar resultado', async () => {
+    const updatedPlayer = { id: 1, username: 'playerUpdated', createdAt: new Date(), updatedAt: new Date() };
+    jest.spyOn(updateService, 'updatePlayer').mockResolvedValue(updatedPlayer);
+
+    const result = await controller.updatePlayer(1, { name: 'playerUpdated' });
+    expect(updateService.updatePlayer).toHaveBeenCalledWith(1, 'playerUpdated');
+    expect(result).toEqual(updatedPlayer);
+  });
+
+  it('deve chamar playerDeleteService.deletePlayer e retornar mensagem de sucesso', async () => {
+    jest.spyOn(deleteService, 'deletePlayer').mockResolvedValue(undefined);
+
+    const result = await controller.deletePlayer(1);
+    expect(deleteService.deletePlayer).toHaveBeenCalledWith(1);
+    expect(result).toEqual({ message: 'Jogador deletado com sucesso' });
   });
 });

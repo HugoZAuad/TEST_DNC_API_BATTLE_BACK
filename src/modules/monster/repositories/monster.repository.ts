@@ -15,6 +15,18 @@ export class MonsterRepository {
     });
   }
 
+  async findByName(name: string): Promise<Monster | null> {
+    return prisma.monster.findFirst({
+      where: { name },
+    });
+  }
+
+  async findByPlayerId(playerId: number): Promise<Monster | null> {
+    return prisma.monster.findFirst({
+      where: { playerId },
+    });
+  }
+
   async create(data: {
     name: string;
     hp: number;
@@ -22,6 +34,7 @@ export class MonsterRepository {
     defense: number;
     speed: number;
     specialAbility: string;
+    playerId: number;
   }): Promise<Monster> {
     return prisma.monster.create({
       data,

@@ -9,6 +9,7 @@ describe('MonsterUpdateService', () => {
   const updatedMonster: Monster = {
     id: 1,
     name: 'Orc',
+    playerId: 1,
     hp: 60,
     attack: 12,
     defense: 6,

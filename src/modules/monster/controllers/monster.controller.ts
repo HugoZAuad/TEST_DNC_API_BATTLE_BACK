@@ -7,71 +7,58 @@ import {
   Param,
   Body,
   ParseIntPipe,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common'
-import { MonsterCreationService } from '../services/monster-creation.service'
-import { MonsterQueryService } from '../services/monster-query.service'
-import { MonsterUpdateService } from '../services/monster-update.service'
-import { MonsterDeleteService } from '../services/monster-delete.service'
-import { CreateMonsterDto } from '../interfaces/dto/create-monster.dto'
-import { UpdateMonsterNameDto } from '../interfaces/dto/update-monster.dto'
-import { MonsterDto } from '../interfaces/dto/monster.dto'
-import { Monster } from '@prisma/client'
+} from '@nestjs/common';
+import { MonsterCreationService } from '../services/monster-creation.service';
+import { MonsterUpdateService } from '../services/monster-update.service';
+import { MonsterDeleteService } from '../services/monster-delete.service';
+import { MonsterFindAllService } from '../services/monster-find-all.service';
+import { MonsterFindByIdService } from '../services/monster-find-by-id.service';
+import { MonsterFindByNameService } from '../services/monster-find-by-name.service';
+import { CreateMonsterDto } from '../interfaces/dto/create-monster.dto';
+import { UpdateMonsterNameDto } from '../interfaces/dto/update-monster.dto';
 
 @Controller('monsters')
 export class MonsterController {
   constructor(
     private readonly monsterCreationService: MonsterCreationService,
-    private readonly monsterQueryService: MonsterQueryService,
     private readonly monsterUpdateService: MonsterUpdateService,
     private readonly monsterDeleteService: MonsterDeleteService,
-  ) { }
+    private readonly monsterFindAllService: MonsterFindAllService,
+    private readonly monsterFindByIdService: MonsterFindByIdService,
+    private readonly monsterFindByNameService: MonsterFindByNameService,
+  ) {}
+
+  @Post()
+  async createMonster(@Body() createMonsterDto: CreateMonsterDto): Promise<any> {
+    return await this.monsterCreationService.create(createMonsterDto);
+  }
 
   @Get()
-  async findAll(): Promise<MonsterDto[]> {
-    const monsters = await this.monsterQueryService.findAll()
-    return monsters.map(monster => new MonsterDto(monster))
+  async findAll(): Promise<any> {
+    return await this.monsterFindAllService.findAll();
   }
 
   @Get(':id')
-  async findById(@Param('id', ParseIntPipe) id: number): Promise<MonsterDto> {
-    const monster = await this.monsterQueryService.findById(id)
-    if (!monster) {
-      throw new HttpException('Monstro não encontrado', HttpStatus.NOT_FOUND)
-    }
-    return new MonsterDto(monster)
+  async findById(@Param('id', ParseIntPipe) id: number): Promise<any> {
+    return await this.monsterFindByIdService.findById(id);
   }
 
-  @Post()
-  async create(@Body() createMonsterDto: CreateMonsterDto): Promise<MonsterDto> {
-    try {
-      const monster = await this.monsterCreationService.create(createMonsterDto)
-      return new MonsterDto(monster)
-    } catch (error) {
-      throw new HttpException(`Erro ao criar monstro: ${error.message}`, HttpStatus.BAD_REQUEST)
-    }
+  @Get('name/:name')
+  async findByName(@Param('name') name: string): Promise<any> {
+    return await this.monsterFindByNameService.findByName(name);
   }
 
   @Patch(':id')
-  async update(
+  async updateMonster(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateData: UpdateMonsterNameDto,
-  ): Promise<MonsterDto> {
-    try {
-      const monster: Monster = await this.monsterUpdateService.update(id, updateData)
-      return new MonsterDto(monster)
-    } catch (error) {
-      throw new HttpException(`Erro ao atualizar monstro: ${error.message}`, HttpStatus.BAD_REQUEST)
-    }
+    @Body() updateMonsterDto: UpdateMonsterNameDto,
+  ): Promise<any> {
+    return await this.monsterUpdateService.update(id, updateMonsterDto);
   }
 
   @Delete(':id')
-  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    try {
-      await this.monsterDeleteService.delete(id)
-    } catch (error) {
-      throw new HttpException(`Erro ao deletar monstro: ${error.message}`, HttpStatus.BAD_REQUEST)
-    }
+  async deleteMonster(@Param('id', ParseIntPipe) id: number): Promise<any> {
+    await this.monsterDeleteService.delete(id);
+    return { message: 'Monstro deletado com sucesso' };
   }
 }

@@ -1,48 +1,40 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MonsterController } from '../monster.controller';
+import { MonsterFindAllService } from '../../services/monster-find-all.service';
+import { MonsterFindByIdService } from '../../services/monster-find-by-id.service';
+import { MonsterFindByNameService } from '../../services/monster-find-by-name.service';
 import { MonsterCreationService } from '../../services/monster-creation.service';
-import { MonsterQueryService } from '../../services/monster-query.service';
 import { MonsterUpdateService } from '../../services/monster-update.service';
 import { MonsterDeleteService } from '../../services/monster-delete.service';
-import { CreateMonsterDto } from '../../interfaces/dto/create-monster.dto';
-import { UpdateMonsterNameDto } from '../../interfaces/dto/update-monster.dto';
-import { MonsterDto } from '../../interfaces/dto/monster.dto';
-import { Monster } from '@prisma/client';
-import { HttpException, HttpStatus } from '@nestjs/common';
 
 describe('MonsterController', () => {
   let controller: MonsterController;
+  let findAllService: MonsterFindAllService;
+  let findByIdService: MonsterFindByIdService;
+  let findByNameService: MonsterFindByNameService;
   let creationService: MonsterCreationService;
-  let queryService: MonsterQueryService;
   let updateService: MonsterUpdateService;
   let deleteService: MonsterDeleteService;
-
-  const mockMonster: Monster = {
-    id: 1,
-    name: 'Goblin',
-    hp: 50,
-    attack: 10,
-    defense: 5,
-    speed: 7,
-    specialAbility: 'Stealth',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MonsterController],
       providers: [
         {
-          provide: MonsterCreationService,
-          useValue: { create: jest.fn() },
+          provide: MonsterFindAllService,
+          useValue: { findAll: jest.fn() },
         },
         {
-          provide: MonsterQueryService,
-          useValue: {
-            findAll: jest.fn(),
-            findById: jest.fn(),
-          },
+          provide: MonsterFindByIdService,
+          useValue: { findById: jest.fn() },
+        },
+        {
+          provide: MonsterFindByNameService,
+          useValue: { findByName: jest.fn() },
+        },
+        {
+          provide: MonsterCreationService,
+          useValue: { create: jest.fn() },
         },
         {
           provide: MonsterUpdateService,
@@ -56,84 +48,123 @@ describe('MonsterController', () => {
     }).compile();
 
     controller = module.get<MonsterController>(MonsterController);
+    findAllService = module.get<MonsterFindAllService>(MonsterFindAllService);
+    findByIdService = module.get<MonsterFindByIdService>(MonsterFindByIdService);
+    findByNameService = module.get<MonsterFindByNameService>(MonsterFindByNameService);
     creationService = module.get<MonsterCreationService>(MonsterCreationService);
-    queryService = module.get<MonsterQueryService>(MonsterQueryService);
     updateService = module.get<MonsterUpdateService>(MonsterUpdateService);
     deleteService = module.get<MonsterDeleteService>(MonsterDeleteService);
   });
 
-  it('deve retornar todos os monstros', async () => {
-    jest.spyOn(queryService, 'findAll').mockResolvedValue([mockMonster]);
-    const result = await controller.findAll();
-    expect(result).toEqual([new MonsterDto(mockMonster)]);
+  it('deve estar definido', () => {
+    expect(controller).toBeDefined();
   });
 
-  it('deve retornar um monstro por ID', async () => {
-    jest.spyOn(queryService, 'findById').mockResolvedValue(mockMonster);
-    const result = await controller.findById(1);
-    expect(result).toEqual(new MonsterDto(mockMonster));
-  });
-
-  it('deve lançar erro se monstro não for encontrado', async () => {
-    jest.spyOn(queryService, 'findById').mockResolvedValue(null);
-    await expect(controller.findById(999)).rejects.toThrow(
-      new HttpException('Monstro não encontrado', HttpStatus.NOT_FOUND),
-    );
-  });
-
-  it('deve criar um monstro com dados válidos', async () => {
-    jest.spyOn(creationService, 'create').mockResolvedValue(mockMonster);
-    const dto: CreateMonsterDto = {
-      name: 'Goblin',
-      hp: 50,
+  it('deve chamar findAllService.findAll e retornar resultado', async () => {
+    const monsters = [{
+      id: 1,
+      name: 'monster1',
+      playerId: 1,
+      hp: 100,
       attack: 10,
       defense: 5,
       speed: 7,
-      specialAbility: 'Stealth',
+      specialAbility: 'fireball',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }];
+    jest.spyOn(findAllService, 'findAll').mockResolvedValue(monsters);
+
+    const result = await controller.findAll();
+    expect(findAllService.findAll).toHaveBeenCalled();
+    expect(result).toEqual(monsters);
+  });
+
+  it('deve chamar findByIdService.findById e retornar resultado', async () => {
+    const monster = {
+      id: 1,
+      name: 'monster1',
+      playerId: 1,
+      hp: 100,
+      attack: 10,
+      defense: 5,
+      speed: 7,
+      specialAbility: 'fireball',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
-    const result = await controller.create(dto);
-    expect(result).toEqual(new MonsterDto(mockMonster));
+    jest.spyOn(findByIdService, 'findById').mockResolvedValue(monster);
+
+    const result = await controller.findById(1);
+    expect(findByIdService.findById).toHaveBeenCalledWith(1);
+    expect(result).toEqual(monster);
   });
 
-  it('deve lançar erro ao criar monstro inválido', async () => {
-    jest.spyOn(creationService, 'create').mockRejectedValue(new Error('Erro'));
-    const dto: CreateMonsterDto = {
-      name: '',
-      hp: 0,
-      attack: 0,
-      defense: 0,
-      speed: 0,
-      specialAbility: '',
+  it('deve chamar findByNameService.findByName e retornar resultado', async () => {
+    const monster = {
+      id: 1,
+      name: 'monster1',
+      playerId: 1,
+      hp: 100,
+      attack: 10,
+      defense: 5,
+      speed: 7,
+      specialAbility: 'fireball',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
-    await expect(controller.create(dto)).rejects.toThrow(
-      new HttpException('Erro ao criar monstro: Erro', HttpStatus.BAD_REQUEST),
-    );
+    jest.spyOn(findByNameService, 'findByName').mockResolvedValue(monster);
+
+    const result = await controller.findByName('monster1');
+    expect(findByNameService.findByName).toHaveBeenCalledWith('monster1');
+    expect(result).toEqual(monster);
   });
 
-  it('deve atualizar o nome do monstro', async () => {
-    jest.spyOn(updateService, 'update').mockResolvedValue(mockMonster);
-    const dto: UpdateMonsterNameDto = { name: 'Orc' };
-    const result = await controller.update(1, dto);
-    expect(result).toEqual(new MonsterDto(mockMonster));
+  it('deve chamar creationService.create e retornar resultado', async () => {
+    const createDto = {
+      id: 1,
+      name: 'monster1',
+      hp: 100,
+      attack: 10,
+      defense: 5,
+      speed: 7,
+      specialAbility: 'fireball',
+      playerId: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    jest.spyOn(creationService, 'create').mockResolvedValue(createDto);
+
+    const result = await controller.createMonster(createDto);
+    expect(creationService.create).toHaveBeenCalledWith(createDto);
+    expect(result).toEqual(createDto);
   });
 
-  it('deve lançar erro ao atualizar monstro', async () => {
-    jest.spyOn(updateService, 'update').mockRejectedValue(new Error('Falha'));
-    const dto: UpdateMonsterNameDto = { name: 'Orc' };
-    await expect(controller.update(1, dto)).rejects.toThrow(
-      new HttpException('Erro ao atualizar monstro: Falha', HttpStatus.BAD_REQUEST),
-    );
+  it('deve chamar updateService.update e retornar resultado', async () => {
+    const updateDto = {
+      id: 1,
+      name: 'monster1',
+      playerId: 1,
+      hp: 100,
+      attack: 10,
+      defense: 5,
+      speed: 7,
+      specialAbility: 'fireball',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    jest.spyOn(updateService, 'update').mockResolvedValue(updateDto);
+
+    const result = await controller.updateMonster(1, updateDto);
+    expect(updateService.update).toHaveBeenCalledWith(1, updateDto);
+    expect(result).toEqual(updateDto);
   });
 
-  it('deve deletar um monstro', async () => {
+  it('deve chamar deleteService.delete e retornar mensagem de sucesso', async () => {
     jest.spyOn(deleteService, 'delete').mockResolvedValue(undefined);
-    await expect(controller.delete(1)).resolves.toBeUndefined();
-  });
 
-  it('deve lançar erro ao deletar monstro', async () => {
-    jest.spyOn(deleteService, 'delete').mockRejectedValue(new Error('Falha'));
-    await expect(controller.delete(1)).rejects.toThrow(
-      new HttpException('Erro ao deletar monstro: Falha', HttpStatus.BAD_REQUEST),
-    );
+    const result = await controller.deleteMonster(1);
+    expect(deleteService.delete).toHaveBeenCalledWith(1);
+    expect(result).toEqual({ message: 'Monstro deletado com sucesso' });
   });
 });
