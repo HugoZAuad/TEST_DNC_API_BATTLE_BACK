@@ -2,7 +2,8 @@
 
 ## Visão Geral
 
-Esta é uma API RESTful para batalhas online entre monstros, onde cada jogador pode escolher um monstro para entrar numa arena e os monstros se enfrentam em batalhas por turnos. A API foi desenvolvida utilizando Node.js com o framework NestJS, banco de dados PostgreSQL e Prisma ORM, além de WebSockets para atualizações em tempo real.
+Esta é uma API RESTful para batalhas online entre monstros, onde cada jogador pode escolher um monstro para entrar numa arena e os monstros se enfrentam em batalhas por turnos. A API foi desenvolvida utilizando Node.js com o framework NestJS, banco de dados PostgreSQL e Prisma ORM.
+
 
 ---
 
@@ -78,6 +79,17 @@ A aplicação segue uma arquitetura monolítica modularizada, organizada em mód
   - Body: `{ "name": "novoNome" }`
 - `DELETE /players/:id` - Remove um jogador.
 
+### Monster
+
+- `GET /monsters` - Lista todos os monstros.
+- `GET /monsters/:id` - Retorna um monstro pelo ID.
+- `POST /monsters` - Cria um novo monstro.
+  - Body: `{ "name": "nomeDoMonstro", "power": valor, ... }` (conforme DTO)
+- `PATCH /monsters/:id` - Atualiza o nome do monstro.
+  - Body: `{ "name": "novoNome" }`
+- `DELETE /monsters/:id` - Remove um monstro.
+
+
 ---
 
 ## Testes
@@ -97,3 +109,4 @@ A aplicação segue uma arquitetura monolítica modularizada, organizada em mód
 ## Considerações Finais
 
 Este projeto foi desenvolvido com foco em boas práticas de desenvolvimento, arquitetura limpa e testabilidade, visando facilitar a manutenção e evolução futura da aplicação.
+

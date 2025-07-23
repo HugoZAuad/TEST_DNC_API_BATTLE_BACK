@@ -12,24 +12,7 @@ model Player {
   username  String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relação com PlayerMonster para deck
-  playerMonsters PlayerMonster[]
 }
-
-model PlayerMonster {
-  id        Int      @id @default(autoincrement())
-  playerId  Int
-  monsterId Int
-  position  Int      // posição no deck (1 a 6)
-
-  player    Player   @relation(fields: [playerId], references: [id])
-  monster   Monster  @relation(fields: [monsterId], references: [id])
-
-  @@unique([playerId, position]) // posição única por player
-  @@unique([playerId, monsterId]) // não repetir monstro no deck
-}
-
 
 model Monster {
   id             Int      @id @default(autoincrement())
@@ -41,8 +24,6 @@ model Monster {
   specialAbility String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
-  playerMonsters PlayerMonster[]
 }
 
 model Battle {
