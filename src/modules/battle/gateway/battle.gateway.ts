@@ -124,7 +124,15 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    const damage = this.battleDamageService.calculateDamage(attacker.attack, defender.defense);
+    let attackValue = attacker.attack;
+    // Verificar se special está ativo e aplicar bônus de 25%
+    if (attacker.specialActive) {
+      attackValue = Math.floor(attackValue * 1.25);
+      attacker.specialActive = false;
+      attacker.specialCooldown = 3;
+    }
+
+    const damage = this.battleDamageService.calculateDamage(attackValue, defender.defense);
     defender.hp -= damage;
     if (defender.hp < 0) defender.hp = 0;
 
@@ -134,6 +142,13 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
     } else {
       this.battleTurnService.switchTurn(battleState);
     }
+
+    // Atualizar cooldowns
+    battleState.players.forEach(player => {
+      if (player.specialCooldown && player.specialCooldown > 0) {
+        player.specialCooldown -= 1;
+      }
+    });
 
     const battleId = `${attackerId}-${defender.playerId}`;
     this.battleRepository.updateBattle(battleId, battleState);
