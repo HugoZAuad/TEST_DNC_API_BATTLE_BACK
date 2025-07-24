@@ -2,34 +2,34 @@
 
 ## Visão Geral
 
-Esta API permite batalhas online entre monstros, onde jogadores podem criar seus personagens, escolher monstros e participar de batalhas em arenas. O sistema gerencia a criação, atualização e exclusão de jogadores e monstros, além de organizar as batalhas em tempo real.
+Esta API permite batalhas online entre monstros, onde jogadores podem criar seus personagens, escolher monstros e participar de batalhas em arenas. O sistema gerencia a criação, atualização e exclusão de jogadores e monstros, além de organizar as batalhas em tempo real, proporcionando uma experiência dinâmica e interativa.
 
 ---
 
 ## Tecnologias Utilizadas
 
-- **Node.js**: Ambiente de execução JavaScript no servidor.
-- **NestJS**: Framework para construção de aplicações escaláveis e organizadas em TypeScript.
-- **PostgreSQL**: Banco de dados relacional para armazenamento dos dados.
-- **Prisma ORM**: Ferramenta para modelagem e acesso ao banco de dados de forma segura e eficiente.
-- **WebSockets**: Comunicação em tempo real para atualização das batalhas.
-- **Jest**: Framework para testes unitários e de integração.
-- **Supertest**: Biblioteca para testes de APIs HTTP.
+- **Node.js**: Ambiente de execução JavaScript no servidor, garantindo alta performance e escalabilidade.
+- **NestJS**: Framework moderno para construção de aplicações escaláveis e organizadas, utilizando TypeScript.
+- **PostgreSQL**: Banco de dados relacional robusto para armazenamento seguro e eficiente dos dados.
+- **Prisma ORM**: Ferramenta para modelagem e acesso ao banco de dados, facilitando operações e garantindo segurança.
+- **WebSockets**: Comunicação em tempo real para atualização instantânea das batalhas entre jogadores.
+- **Jest**: Framework para testes unitários e de integração, assegurando a qualidade do código.
+- **Supertest**: Biblioteca para testes de APIs HTTP, garantindo o correto funcionamento dos endpoints.
 
 ---
 
 ## Arquitetura
 
-A aplicação segue uma arquitetura modular monolítica, organizada em módulos que agrupam funcionalidades relacionadas, como jogadores, monstros e batalhas.
+A aplicação é estruturada em uma arquitetura modular monolítica, onde cada módulo é responsável por uma funcionalidade específica, como jogadores, monstros e batalhas. Essa organização facilita a manutenção, escalabilidade e colaboração entre equipes.
 
 ### Princípios e Boas Práticas
 
-- **Modularização**: Cada módulo é responsável por uma parte específica do sistema, facilitando manutenção e escalabilidade.
-- **Princípios SOLID**: Código organizado para garantir responsabilidade única, extensibilidade e fácil manutenção.
+- **Modularização**: Código organizado em módulos independentes para melhor organização e escalabilidade.
+- **Princípios SOLID**: Garantia de responsabilidade única, extensibilidade e fácil manutenção do código.
 - **Injeção de Dependências**: Uso do sistema do NestJS para desacoplar componentes e facilitar testes.
-- **Validação e Tratamento de Erros**: Uso de pipes e middlewares para garantir dados válidos e tratamento adequado de exceções.
-- **Testes Automatizados**: Cobertura de testes unitários e de integração para garantir qualidade e evitar regressões.
-- **DTOs (Data Transfer Objects)**: Para validação e tipagem dos dados trafegados nas rotas.
+- **Validação e Tratamento de Erros**: Implementação de pipes e middlewares para garantir dados válidos e tratamento adequado de exceções.
+- **Testes Automatizados**: Cobertura abrangente com testes unitários e de integração para evitar regressões.
+- **DTOs (Data Transfer Objects)**: Validação e tipagem rigorosa dos dados trafegados nas rotas, aumentando a segurança.
 
 ---
 
@@ -112,24 +112,6 @@ A aplicação segue uma arquitetura modular monolítica, organizada em módulos 
 
 ## Considerações Finais
 
-Este projeto foi desenvolvido com foco em boas práticas, arquitetura limpa e testabilidade, visando facilitar a manutenção e evolução futura da aplicação. A modularização e o uso de tecnologias modernas garantem escalabilidade e facilidade de uso.
+Este projeto foi desenvolvido com foco em boas práticas, arquitetura limpa e testabilidade, visando facilitar a manutenção e evolução futura da aplicação. A modularização e o uso de tecnologias modernas garantem escalabilidade, robustez e facilidade de uso.
 
----
-
-## Atualizações Recentes
-
-### Resolução de Dependência Circular
-
-Durante o desenvolvimento, foi identificada uma dependência circular entre os serviços ArenaCreationService e ArenaStateService. Para resolver esse problema, foi utilizado o padrão do NestJS com o decorator `@Inject` combinado com `forwardRef` na injeção dessas dependências.
-
-Essa abordagem permite que os serviços se referenciem mutuamente sem causar erros de injeção, garantindo o funcionamento correto da aplicação.
-
-### Impacto nos Testes
-
-As alterações na injeção das dependências exigiram atualizações nos testes unitários dos serviços mencionados para garantir compatibilidade e funcionamento adequado.
-
-Os testes foram revisados e adaptados para simular corretamente as dependências usando mocks e injeção simulada.
-
----
-
-Se precisar de ajuda, consulte as rotas disponíveis e os testes para entender o funcionamento detalhado da API.
+Para mais detalhes, consulte as rotas disponíveis e os testes implementados para entender o funcionamento completo da API.
