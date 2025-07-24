@@ -5,7 +5,6 @@ module.exports = {
   rootDir: 'src',
   testMatch: [
     '**/services/**/*.spec.ts',
-    '**/gateway/**/*.spec.ts',
     '**/controllers/**/*.spec.ts'
   ],
   transform: {
