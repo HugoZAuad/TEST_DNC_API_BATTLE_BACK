@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ArenaController } from './controllers/arena.controller';
 import { ArenaGateway } from './gateway/arena.gateway';
 import { BattleModule } from '../battle/battle.module';
@@ -10,9 +10,14 @@ import { ArenaJoinService } from './services/arena-join.service';
 import { ArenaLeaveService } from './services/arena-leave.service';
 import { ArenaStartService } from './services/arena-start.service';
 import { ArenaEndService } from './services/arena-end.service';
+import { ArenaStateService } from './services/arena-state.service';
 
 @Module({
-  imports: [BattleModule, PlayerModule, MonsterModule],
+  imports: [
+    forwardRef(() => BattleModule),
+    forwardRef(() => PlayerModule),
+    forwardRef(() => MonsterModule),
+  ],
   controllers: [ArenaController],
   providers: [
     ArenaGateway,
@@ -22,6 +27,7 @@ import { ArenaEndService } from './services/arena-end.service';
     ArenaLeaveService,
     ArenaStartService,
     ArenaEndService,
+    ArenaStateService,
   ],
   exports: [
     ArenaGateway,
@@ -31,6 +37,7 @@ import { ArenaEndService } from './services/arena-end.service';
     ArenaLeaveService,
     ArenaStartService,
     ArenaEndService,
+    ArenaStateService,
   ],
 })
 export class ArenaModule {}

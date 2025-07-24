@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BattleGateway } from './gateway/battle.gateway';
 import { MatchmakingService } from './services/matchmaking.service';
 import { BattleDamageService } from './services/battle-damage.service';
@@ -10,7 +10,11 @@ import { PlayerModule } from '../player/player.module';
 import { MonsterModule } from '../monster/monster.module';
 
 @Module({
-  imports: [PlayerModule, MonsterModule],
+  imports: [
+    forwardRef(() => PlayerModule),
+    forwardRef(() => MonsterModule),
+    forwardRef(() => import('../arena/arena.module').then(m => m.ArenaModule)),
+  ],
   providers: [
     BattleGateway,
     MatchmakingService,
@@ -20,6 +24,6 @@ import { MonsterModule } from '../monster/monster.module';
     BattleRepository,
     BattleStatsService,
   ],
-  exports: [BattleGateway],
+  exports: [BattleGateway, MatchmakingService],
 })
 export class BattleModule {}

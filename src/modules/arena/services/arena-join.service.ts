@@ -1,11 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { ArenaCreationService } from './arena-creation.service';
+import { ArenaStateService } from './arena-state.service';
 
 @Injectable()
 export class ArenaJoinService {
-  constructor(private readonly arenaCreationService: ArenaCreationService) {}
+  constructor(
+    private readonly arenaCreationService: ArenaCreationService,
+    private readonly arenaStateService: ArenaStateService,
+  ) {}
 
   joinArena(arenaId: string, data: { player_id: number; monster_id: number }) {
+    if (!this.arenaStateService.isArenaOpen(arenaId)) {
+      return { error: 'Arena fechada para novas entradas' };
+    }
+
     const arena = this.arenaCreationService.getArena(arenaId);
     if (!arena) {
       return { error: 'Arena não encontrada' };

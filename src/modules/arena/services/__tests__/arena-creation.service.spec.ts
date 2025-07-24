@@ -1,10 +1,17 @@
 import { ArenaCreationService } from '../arena-creation.service';
+import { ArenaStateService } from '../arena-state.service';
 
 describe('ArenaCreationService', () => {
   let service: ArenaCreationService;
+  let mockArenaStateService: any;
 
   beforeEach(() => {
-    service = new ArenaCreationService();
+    mockArenaStateService = {
+      openArena: jest.fn(),
+    };
+    service = new ArenaCreationService(
+      mockArenaStateService as unknown as ArenaStateService,
+    );
   });
 
   it('deve criar uma arena com as propriedades corretas', () => {
@@ -15,6 +22,7 @@ describe('ArenaCreationService', () => {
     expect(arena.name).toBe(data.name);
     expect(arena.maxPlayers).toBe(data.max_players);
     expect(arena.players).toEqual([]);
+    expect(mockArenaStateService.openArena).toHaveBeenCalledWith(arena.id);
   });
 
   it('deve recuperar uma arena pelo id', () => {

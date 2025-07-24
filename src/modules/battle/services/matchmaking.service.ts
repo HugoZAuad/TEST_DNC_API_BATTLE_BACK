@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { BattleRepository } from '../repositories/battle.repository';
 import { MonsterRepository } from '../../monster/repositories/monster.repository';
 import { PlayerRepository } from '../../player/repositories/player.repository';
@@ -13,6 +13,7 @@ export class MatchmakingService {
     private readonly battleRepository: BattleRepository,
     private readonly playerRepository: PlayerRepository,
     private readonly monsterRepository: MonsterRepository,
+    @Inject(forwardRef(() => BattleGateway))
     private readonly battleGateway: BattleGateway,
   ) {}
 

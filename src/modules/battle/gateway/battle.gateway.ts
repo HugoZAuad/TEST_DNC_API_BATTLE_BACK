@@ -8,6 +8,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { Inject, forwardRef } from '@nestjs/common';
 import { MatchmakingService } from '../services/matchmaking.service';
 import { BattleDamageService } from '../services/battle-damage.service';
 import { BattleTurnService } from '../services/battle-turn.service';
@@ -25,6 +26,7 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private playerSockets: Map<string, string> = new Map(); // playerId -> socketId
 
   constructor(
+    @Inject(forwardRef(() => MatchmakingService))
     private readonly matchmakingService: MatchmakingService,
     private readonly battleDamageService: BattleDamageService,
     private readonly battleTurnService: BattleTurnService,
@@ -100,6 +102,10 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('attack')
   async handleAttack(@MessageBody() data: AttackDto, @ConnectedSocket() client: Socket) {
+    await this.processAttack(data, client);
+  }
+
+  public async processAttack(data: AttackDto, client: Socket) {
     const attackerId = this.players.get(client.id);
     if (!attackerId) {
       this.sendErrorMessage(client, 'Jogador não autenticado.');
