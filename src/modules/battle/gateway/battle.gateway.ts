@@ -17,7 +17,7 @@ import { BattleRepository } from '../repositories/battle.repository';
 import { AttackDto } from '../interfaces/dto/attack.dto';
 import { SurrenderDto } from '../interfaces/dto/surrender.dto';
 
-@WebSocketGateway({ namespace: '/battle' })
+@WebSocketGateway({ namespace: '/battle', cors: { origin: '*' } })
 export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
