@@ -12,12 +12,14 @@ export class BattleRepository {
   }
 
   createBattle(battleId: string, players: PlayerState[]) {
-    this.battles.set(battleId, {
-      players,
-      currentTurnPlayerId: this.getFastestPlayer(players).playerId,
-      isBattleActive: true,
-    });
-  }
+  this.battles.set(battleId, {
+    id: battleId,
+    players,
+    currentTurnPlayerId: this.getFastestPlayer(players).playerId,
+    isBattleActive: true,
+  });
+}
+
 
   getBattle(battleId: string): BattleState | undefined {
     return this.battles.get(battleId);

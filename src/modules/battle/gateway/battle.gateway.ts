@@ -4,184 +4,120 @@ import {
   SubscribeMessage,
   MessageBody,
   ConnectedSocket,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Inject, forwardRef } from '@nestjs/common';
 import { MatchmakingService } from '../services/matchmaking.service';
+import { BattleState } from '../interfaces/interfaces/battle-state.interface';
 import { BattleDamageService } from '../services/battle-damage.service';
 import { BattleTurnService } from '../services/battle-turn.service';
 import { BattleSurrenderService } from '../services/battle-surrender.service';
-import { BattleRepository } from '../repositories/battle.repository';
-import { AttackDto } from '../interfaces/dto/attack.dto';
-import { SurrenderDto } from '../interfaces/dto/surrender.dto';
 
-@WebSocketGateway({ namespace: '/battle', cors: { origin: '*' } })
-export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
+@WebSocketGateway({ namespace: '/arena' })
+export class BattleGateway {
   @WebSocketServer()
   server: Server;
 
-  private players: Map<string, string> = new Map(); // socketId -> playerId
-  private playerSockets: Map<string, string> = new Map(); // playerId -> socketId
+  private socketsByPlayerId: Map<string, Socket> = new Map();
+  private battles: Map<string, BattleState> = new Map();
 
   constructor(
-    @Inject(forwardRef(() => MatchmakingService))
     private readonly matchmakingService: MatchmakingService,
-    private readonly battleDamageService: BattleDamageService,
-    private readonly battleTurnService: BattleTurnService,
-    private readonly battleSurrenderService: BattleSurrenderService,
-    private readonly battleRepository: BattleRepository,
+    private readonly damageService: BattleDamageService,
+    private readonly turnService: BattleTurnService,
+    private readonly surrenderService: BattleSurrenderService,
   ) {}
 
-  handleConnection(client: Socket) {
-    console.log(`Player connected: ${client.id}`);
+  getSocketByPlayerId(playerId: string): Socket | undefined {
+    return this.socketsByPlayerId.get(playerId);
   }
 
-  handleDisconnect(client: Socket) {
-    console.log(`Player disconnected: ${client.id}`);
-    const playerId = this.players.get(client.id);
-    if (playerId) {
-      this.matchmakingService.removePlayer(parseInt(playerId));
-      this.playerSockets.delete(playerId);
-    }
-    this.players.delete(client.id);
-  }
-
-  public sendErrorMessage(client: Socket, message: string) {
-    client.emit('error', message);
-  }
-
-  public getSocketByPlayerId(playerId: string): Socket | undefined {
-    const socketId = this.playerSockets.get(playerId);
-    if (!socketId) return undefined;
-    return this.server.sockets.sockets.get(socketId);
-  }
-
-  @SubscribeMessage('playerAvailable')
-  async handlePlayerAvailable(@MessageBody() data: { playerId: number }, @ConnectedSocket() client: Socket) {
-    const added = await this.matchmakingService.addPlayer(data.playerId);
-    if (!added) {
-      this.sendErrorMessage(client, 'Você precisa ter um monstro criado para entrar na batalha.');
-      return;
-    }
-    this.players.set(client.id, data.playerId.toString());
-    this.playerSockets.set(data.playerId.toString(), client.id);
-    client.emit('availableConfirmed');
+  sendErrorMessage(socket: Socket, message: string) {
+    socket.emit('error', message);
   }
 
   @SubscribeMessage('startBattle')
   async handleStartBattle(@MessageBody() data: { playerId: number }, @ConnectedSocket() client: Socket) {
-    // Enviar evento para o cliente indicando que está aguardando jogador
-    client.emit('waitingForPlayer', { message: 'Aguardando jogador real por até 5 segundos...' });
+    const playerId = data.playerId.toString();
+    this.socketsByPlayerId.set(playerId, client);
 
+    await this.matchmakingService.addPlayer(data.playerId);
     const opponent = await this.matchmakingService.findOpponent(data.playerId);
+
     if (!opponent) {
-      this.sendErrorMessage(client, 'Nenhum oponente disponível no momento.');
+      client.emit('error', 'Nenhum oponente ou bot disponível');
       return;
     }
 
-    const players = [
-      { playerId: data.playerId.toString(), hp: 100, attack: 10, defense: 5, speed: 10, specialAbility: 'None', isBot: false },
-      { playerId: opponent.playerId, hp: 100, attack: 10, defense: 5, speed: 10, specialAbility: 'None', isBot: opponent.isBot },
-    ];
-    const battleId = `${data.playerId}-${opponent.playerId}`;
-    this.battleRepository.createBattle(battleId, players);
+    const battleId = `battle-${Date.now()}`;
+    const battleState: BattleState = {
+      id: battleId,
+      isBattleActive: true,
+      currentTurnPlayerId: playerId,
+      players: [
+        {
+          playerId,
+          hp: 100,
+          attack: 20,
+          defense: 10,
+          speed: 5,
+          specialAbility: 'none',
+          isBot: false,
+        },
+        opponent,
+      ],
+    };
 
-    const battleState = this.battleRepository.getBattle(battleId);
-    if (!battleState) {
-      this.sendErrorMessage(client, 'Erro ao iniciar a batalha.');
-      return;
-    }
+    this.battles.set(battleId, battleState);
 
-    this.battleRepository.updateBattle(battleId, battleState);
     client.emit('battleStarted', { battleState });
-
     const opponentSocket = this.getSocketByPlayerId(opponent.playerId);
-    if (opponentSocket) {
+    if (opponentSocket && !opponent.isBot) {
       opponentSocket.emit('battleStarted', { battleState });
     }
   }
 
-  @SubscribeMessage('attack')
-  async handleAttack(@MessageBody() data: AttackDto, @ConnectedSocket() client: Socket) {
-    await this.processAttack(data, client);
-  }
-
-  public async processAttack(data: AttackDto, client: Socket) {
-    const attackerId = this.players.get(client.id);
-    if (!attackerId) {
-      this.sendErrorMessage(client, 'Jogador não autenticado.');
+  @SubscribeMessage('battleAction')
+  handleBattleAction(@MessageBody() data: { battleId: string; playerId: string; action: string }, @ConnectedSocket() client: Socket) {
+    const battle = this.battles.get(data.battleId);
+    if (!battle || !battle.isBattleActive) {
+      client.emit('error', 'Batalha não encontrada ou encerrada');
       return;
     }
 
-    const battleState = this.battleRepository.getBattleByPlayerId(attackerId);
-    if (!battleState) {
-      this.sendErrorMessage(client, 'Batalha não encontrada.');
+    if (!this.turnService.isPlayerTurn(battle, data.playerId)) {
+      client.emit('error', 'Não é seu turno');
       return;
     }
 
-    if (!this.battleTurnService.isPlayerTurn(battleState, attackerId)) {
-      this.sendErrorMessage(client, 'Não é seu turno.');
-      return;
+    const player = battle.players.find(p => p.playerId === data.playerId);
+    const opponent = battle.players.find(p => p.playerId !== data.playerId);
+
+    switch (data.action) {
+      case 'attack':
+        const damage = this.damageService.calculateDamage(player!.attack, opponent!.defense);
+        opponent!.hp -= damage;
+        break;
+      case 'defend':
+        player!.defense += 5;
+        break;
+      case 'special':
+        opponent!.hp -= 30;
+        break;
+      case 'forfeit':
+        this.surrenderService.surrender(battle, data.playerId);
+        break;
+      default:
+        client.emit('error', 'Ação inválida');
+        return;
     }
 
-    const attacker = battleState.players.find(p => p.playerId === attackerId);
-    const defender = battleState.players.find(p => p.playerId === data.targetId.toString());
-    if (!attacker || !defender) {
-      this.sendErrorMessage(client, 'Jogador inválido.');
-      return;
-    }
-
-    let attackValue = attacker.attack;
-    // Verificar se special está ativo e aplicar bônus de 25%
-    if (attacker.specialActive) {
-      attackValue = Math.floor(attackValue * 1.25);
-      attacker.specialActive = false;
-      attacker.specialCooldown = 3;
-    }
-
-    const damage = this.battleDamageService.calculateDamage(attackValue, defender.defense);
-    defender.hp -= damage;
-    if (defender.hp < 0) defender.hp = 0;
-
-    if (defender.hp === 0) {
-      battleState.isBattleActive = false;
-      (battleState as any).winnerId = attacker.playerId;
+    if (opponent!.hp <= 0) {
+      battle.isBattleActive = false;
+      battle.winnerId = player!.playerId;
     } else {
-      this.battleTurnService.switchTurn(battleState);
+      this.turnService.switchTurn(battle);
     }
 
-    // Atualizar cooldowns
-    battleState.players.forEach(player => {
-      if (player.specialCooldown && player.specialCooldown > 0) {
-        player.specialCooldown -= 1;
-      }
-    });
-
-    const battleId = `${attackerId}-${defender.playerId}`;
-    this.battleRepository.updateBattle(battleId, battleState);
-
-    this.server.emit('battleUpdate', battleState);
-  }
-
-  @SubscribeMessage('surrender')
-  async handleSurrender(@MessageBody() data: SurrenderDto, @ConnectedSocket() client: Socket) {
-    const playerId = this.players.get(client.id);
-    if (!playerId) {
-      this.sendErrorMessage(client, 'Jogador não autenticado.');
-      return;
-    }
-
-    const battleState = this.battleRepository.getBattleByPlayerId(playerId);
-    if (!battleState) {
-      this.sendErrorMessage(client, 'Batalha não encontrada.');
-      return;
-    }
-
-    const updatedBattle = this.battleSurrenderService.surrender(battleState, playerId);
-    this.battleRepository.updateBattle(battleState.players[0].playerId.toString(), updatedBattle);
-
-    this.server.emit('battleUpdate', updatedBattle);
+    this.server.to(data.battleId).emit('battleUpdate', battle);
   }
 }
