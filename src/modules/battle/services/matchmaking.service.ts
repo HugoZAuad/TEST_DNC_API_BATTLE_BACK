@@ -1,4 +1,4 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { BattleRepository } from '../repositories/battle.repository';
 import { MonsterRepository } from '../../monster/repositories/monster.repository';
 import { PlayerRepository } from '../../player/repositories/player.repository';
@@ -13,7 +13,6 @@ export class MatchmakingService {
     private readonly battleRepository: BattleRepository,
     private readonly playerRepository: PlayerRepository,
     private readonly monsterRepository: MonsterRepository,
-    @Inject(forwardRef(() => BattleGateway))
     private readonly battleGateway: BattleGateway,
   ) {}
 
@@ -38,8 +37,7 @@ export class MatchmakingService {
     while (Date.now() - startTime < waitTimeMs) {
       const candidates = Array.from(this.availablePlayers).filter(id => id !== playerId);
       if (candidates.length > 0) {
-        const randomIndex = Math.floor(Math.random() * candidates.length);
-        const opponentId = candidates[randomIndex];
+        const opponentId = candidates[Math.floor(Math.random() * candidates.length)];
 
         const player = await this.playerRepository.findById(opponentId);
         const monsters = await this.monsterRepository.findByPlayerId(opponentId);
@@ -50,12 +48,12 @@ export class MatchmakingService {
 
           const socket = this.battleGateway.getSocketByPlayerId(opponentId.toString());
           if (socket) {
-            this.battleGateway.sendErrorMessage(socket, 'A partida deu erro. Você foi colocado de volta na fila.');
+            this.battleGateway.sendErrorMessage(socket, 'Erro na partida. Você foi colocado de volta na fila.');
           }
           continue;
         }
 
-        const monster = monsters[0]; // Seleciona o primeiro monstro para o jogador
+        const monster = monsters[0];
 
         return {
           playerId: player.id.toString(),
@@ -67,15 +65,16 @@ export class MatchmakingService {
           isBot: false,
         };
       }
+
       await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
     }
 
-    // Após 5 segundos, retorna bot
     const bots = this.battleRepository.getBots();
     if (!bots || bots.length === 0) {
       return undefined;
     }
-    const randomIndex = Math.floor(Math.random() * bots.length);
-    return bots[randomIndex];
+
+    const bot = bots[Math.floor(Math.random() * bots.length)];
+    return bot;
   }
 }

@@ -6,154 +6,88 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { MatchmakingService } from '../services/matchmaking.service';
-import { BattleRepository } from '../repositories/battle.repository';
-import { BattleDamageService } from '../services/battle-damage.service';
-import { BattleTurnService } from '../services/battle-turn.service';
-import { BattleSurrenderService } from '../services/battle-surrender.service';
-import { BattleState } from '../interfaces/interfaces/battle-state.interface';
 
-@WebSocketGateway({ namespace: '/arena' })
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+  },
+})
 export class BattleGateway {
   @WebSocketServer()
   server: Server;
 
-  private socketsByPlayerId: Map<string, Socket> = new Map();
+  // Mapeia playerId para seu socket
+  private playerSockets: Map<string, Socket> = new Map();
 
-  constructor(
-    private readonly matchmakingService: MatchmakingService,
-    private readonly battleRepository: BattleRepository,
-    private readonly damageService: BattleDamageService,
-    private readonly turnService: BattleTurnService,
-    private readonly surrenderService: BattleSurrenderService,
-  ) {}
+  /**
+   * Registra o socket de um jogador
+   */
+  registerSocket(playerId: string, socket: Socket) {
+    this.playerSockets.set(playerId, socket);
+  }
 
+  /**
+   * Remove o socket de um jogador
+   */
+  unregisterSocket(playerId: string) {
+    this.playerSockets.delete(playerId);
+  }
+
+  /**
+   * Recupera o socket de um jogador
+   */
   getSocketByPlayerId(playerId: string): Socket | undefined {
-    return this.socketsByPlayerId.get(playerId);
+    return this.playerSockets.get(playerId);
   }
 
-  sendErrorMessage(socket: Socket, message: string) {
-    socket.emit('error', message);
+  /**
+   * Envia uma mensagem de erro para o jogador
+   */
+  sendErrorMessage(socket: Socket, message: string, code?: number) {
+    socket.emit('errorMessage', {
+      type: 'error',
+      message,
+      code: code ?? 500,
+    });
   }
 
-  @SubscribeMessage('startBattle')
-  async handleStartBattle(@MessageBody() data: { playerId: number }, @ConnectedSocket() client: Socket) {
-    const playerId = data.playerId.toString();
-    this.socketsByPlayerId.set(playerId, client);
+  /**
+   * Envia uma mensagem genérica para o jogador
+   */
+  sendMessage(socket: Socket, event: string, payload: any) {
+    socket.emit(event, payload);
+  }
 
-    await this.matchmakingService.addPlayer(data.playerId);
-    const opponent = await this.matchmakingService.findOpponent(data.playerId);
+  /**
+   * Evento de conexão inicial
+   */
+  handleConnection(socket: Socket) {
+    console.log(`Socket conectado: ${socket.id}`);
+  }
 
-    if (!opponent) {
-      client.emit('error', 'Nenhum oponente ou bot disponível');
-      return;
-    }
-
-    const battleId = `battle-${Date.now()}`;
-    const battleState: BattleState = {
-      id: battleId,
-      players: [
-        {
-          playerId,
-          hp: 100,
-          attack: 20,
-          defense: 10,
-          speed: 5,
-          specialAbility: 'none',
-          isBot: false,
-        },
-        opponent,
-      ],
-      currentTurnPlayerId: playerId,
-      isBattleActive: true,
-    };
-
-    this.battleRepository.createBattle(battleId, battleState.players);
-
-    client.emit('battleStarted', { battleState });
-    const opponentSocket = this.getSocketByPlayerId(opponent.playerId);
-    if (opponentSocket && !opponent.isBot) {
-      opponentSocket.emit('battleStarted', { battleState });
+  /**
+   * Evento de desconexão
+   */
+  handleDisconnect(socket: Socket) {
+    console.log(`Socket desconectado: ${socket.id}`);
+    // Opcional: remover da lista de jogadores
+    for (const [playerId, s] of this.playerSockets.entries()) {
+      if (s.id === socket.id) {
+        this.unregisterSocket(playerId);
+        break;
+      }
     }
   }
 
-  async handleAttack(data: { playerId: string; targetId: string }, socket: Socket) {
-    const battle = this.battleRepository.getBattleByPlayerId(data.playerId);
-    if (!battle || !battle.isBattleActive) {
-      socket.emit('error', 'Batalha não encontrada ou encerrada');
-      return;
-    }
-
-    if (!this.turnService.isPlayerTurn(battle, data.playerId)) {
-      socket.emit('error', 'Não é seu turno');
-      return;
-    }
-
-    const attacker = battle.players.find(p => p.playerId === data.playerId);
-    const target = battle.players.find(p => p.playerId === data.targetId);
-
-    if (!attacker || !target) {
-      socket.emit('error', 'Jogador ou alvo inválido');
-      return;
-    }
-
-    const damage = this.damageService.calculateDamage(attacker.attack, target.defense);
-    target.hp -= damage;
-
-    if (target.hp <= 0) {
-      battle.isBattleActive = false;
-      battle.winnerId = attacker.playerId;
-    } else {
-      this.turnService.switchTurn(battle);
-    }
-
-    this.battleRepository.updateBattle(battle.id, battle);
-    this.server.to(battle.id).emit('battleUpdate', battle);
-  }
-
-  @SubscribeMessage('battleAction')
-  handleBattleAction(@MessageBody() data: { battleId: string; playerId: string; action: string }, @ConnectedSocket() client: Socket) {
-    const battle = this.battleRepository.getBattle(data.battleId);
-    if (!battle || !battle.isBattleActive) {
-      client.emit('error', 'Batalha não encontrada ou encerrada');
-      return;
-    }
-
-    if (!this.turnService.isPlayerTurn(battle, data.playerId)) {
-      client.emit('error', 'Não é seu turno');
-      return;
-    }
-
-    const player = battle.players.find(p => p.playerId === data.playerId);
-    const opponent = battle.players.find(p => p.playerId !== data.playerId);
-
-    switch (data.action) {
-      case 'attack':
-        const damage = this.damageService.calculateDamage(player!.attack, opponent!.defense);
-        opponent!.hp -= damage;
-        break;
-      case 'defend':
-        player!.defense += 5;
-        break;
-      case 'special':
-        opponent!.hp -= 30;
-        break;
-      case 'forfeit':
-        this.surrenderService.surrender(battle, data.playerId);
-        break;
-      default:
-        client.emit('error', 'Ação inválida');
-        return;
-    }
-
-    if (opponent!.hp <= 0) {
-      battle.isBattleActive = false;
-      battle.winnerId = player!.playerId;
-    } else {
-      this.turnService.switchTurn(battle);
-    }
-
-    this.battleRepository.updateBattle(battle.id, battle);
-    this.server.to(battle.id).emit('battleUpdate', battle);
+  /**
+   * Exemplo de evento recebido do cliente
+   */
+  @SubscribeMessage('registerPlayer')
+  handleRegisterPlayer(
+    @MessageBody() data: { playerId: string },
+    @ConnectedSocket() socket: Socket,
+  ) {
+    this.registerSocket(data.playerId, socket);
+    socket.emit('playerRegistered', { success: true });
   }
 }

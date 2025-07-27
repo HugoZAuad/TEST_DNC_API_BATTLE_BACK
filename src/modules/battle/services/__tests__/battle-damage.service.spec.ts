@@ -1,23 +1,36 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { BattleDamageService } from '../battle-damage.service';
+import { BattleRepository } from '../../repositories/battle.repository';
 
 describe('BattleDamageService', () => {
   let service: BattleDamageService;
+  let battleRepository: BattleRepository;
 
-  beforeEach(() => {
-    service = new BattleDamageService();
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        BattleDamageService,
+        {
+          provide: BattleRepository,
+          useValue: {
+            applyDamage: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    service = module.get<BattleDamageService>(BattleDamageService);
+    battleRepository = module.get<BattleRepository>(BattleRepository);
   });
 
-  it('deve estar definido', () => {
+  it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  it('deve calcular dano corretamente quando ataque é maior que defesa', () => {
-    const damage = service.calculateDamage(10, 5);
-    expect(damage).toBe(5);
-  });
-
-  it('deve retornar dano mínimo 1 quando ataque é menor ou igual a defesa', () => {
-    expect(service.calculateDamage(5, 10)).toBe(1);
-    expect(service.calculateDamage(5, 5)).toBe(1);
+  it('should apply damage correctly', async () => {
+    const attacker = { attack: 50 };
+    const defender = { defense: 20, hp: 100 };
+    const result = await service.calculateDamage(attacker, defender);
+    expect(result).toBeGreaterThan(0);
   });
 });

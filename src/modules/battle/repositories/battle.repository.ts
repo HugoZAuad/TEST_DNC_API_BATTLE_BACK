@@ -12,14 +12,13 @@ export class BattleRepository {
   }
 
   createBattle(battleId: string, players: PlayerState[]) {
-  this.battles.set(battleId, {
-    id: battleId,
-    players,
-    currentTurnPlayerId: this.getFastestPlayer(players).playerId,
-    isBattleActive: true,
-  });
-}
-
+    this.battles.set(battleId, {
+      id: battleId,
+      players,
+      currentTurnPlayerId: this.getFastestPlayer(players).playerId,
+      isBattleActive: true,
+    });
+  }
 
   getBattle(battleId: string): BattleState | undefined {
     return this.battles.get(battleId);
@@ -33,10 +32,6 @@ export class BattleRepository {
     this.battles.delete(battleId);
   }
 
-  private getFastestPlayer(players: PlayerState[]): PlayerState {
-    return players.reduce((prev, current) => (prev.speed > current.speed ? prev : current));
-  }
-
   getBattleByPlayerId(playerId: string): BattleState | undefined {
     for (const battle of this.battles.values()) {
       if (battle.players.some(p => p.playerId === playerId)) {
@@ -44,5 +39,19 @@ export class BattleRepository {
       }
     }
     return undefined;
+  }
+
+  endBattle(winnerId: string, loserId: string): void {
+    const battle =
+      this.getBattleByPlayerId(winnerId) || this.getBattleByPlayerId(loserId);
+    if (battle) {
+      this.deleteBattle(battle.id);
+    }
+  }
+
+  private getFastestPlayer(players: PlayerState[]): PlayerState {
+    return players.reduce((prev, current) =>
+      prev.speed > current.speed ? prev : current,
+    );
   }
 }

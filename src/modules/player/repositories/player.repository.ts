@@ -45,4 +45,20 @@ export class PlayerRepository {
     }
     await this.prisma.player.delete({ where: { id } });
   }
+
+  async updateStats(id: string, stats: { wins?: number; losses?: number }): Promise<void> {
+    const playerId = parseInt(id);
+    const player = await this.findById(playerId);
+    if (!player) {
+      throw new NotFoundException('Jogador não encontrado');
+    }
+
+    await this.prisma.player.update({
+      where: { id: playerId },
+      data: {
+        wins: (player.wins ?? 0) + (stats.wins ?? 0),
+        losses: (player.losses ?? 0) + (stats.losses ?? 0),
+      },
+    });
+  }
 }
