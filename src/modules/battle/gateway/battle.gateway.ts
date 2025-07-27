@@ -7,10 +7,11 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MatchmakingService } from '../services/matchmaking.service';
-import { BattleState } from '../interfaces/interfaces/battle-state.interface';
+import { BattleRepository } from '../repositories/battle.repository';
 import { BattleDamageService } from '../services/battle-damage.service';
 import { BattleTurnService } from '../services/battle-turn.service';
 import { BattleSurrenderService } from '../services/battle-surrender.service';
+import { BattleState } from '../interfaces/interfaces/battle-state.interface';
 
 @WebSocketGateway({ namespace: '/arena' })
 export class BattleGateway {
@@ -18,10 +19,10 @@ export class BattleGateway {
   server: Server;
 
   private socketsByPlayerId: Map<string, Socket> = new Map();
-  private battles: Map<string, BattleState> = new Map();
 
   constructor(
     private readonly matchmakingService: MatchmakingService,
+    private readonly battleRepository: BattleRepository,
     private readonly damageService: BattleDamageService,
     private readonly turnService: BattleTurnService,
     private readonly surrenderService: BattleSurrenderService,
@@ -51,8 +52,6 @@ export class BattleGateway {
     const battleId = `battle-${Date.now()}`;
     const battleState: BattleState = {
       id: battleId,
-      isBattleActive: true,
-      currentTurnPlayerId: playerId,
       players: [
         {
           playerId,
@@ -65,9 +64,11 @@ export class BattleGateway {
         },
         opponent,
       ],
+      currentTurnPlayerId: playerId,
+      isBattleActive: true,
     };
 
-    this.battles.set(battleId, battleState);
+    this.battleRepository.createBattle(battleId, battleState.players);
 
     client.emit('battleStarted', { battleState });
     const opponentSocket = this.getSocketByPlayerId(opponent.playerId);
@@ -76,9 +77,43 @@ export class BattleGateway {
     }
   }
 
+  async handleAttack(data: { playerId: string; targetId: string }, socket: Socket) {
+    const battle = this.battleRepository.getBattleByPlayerId(data.playerId);
+    if (!battle || !battle.isBattleActive) {
+      socket.emit('error', 'Batalha não encontrada ou encerrada');
+      return;
+    }
+
+    if (!this.turnService.isPlayerTurn(battle, data.playerId)) {
+      socket.emit('error', 'Não é seu turno');
+      return;
+    }
+
+    const attacker = battle.players.find(p => p.playerId === data.playerId);
+    const target = battle.players.find(p => p.playerId === data.targetId);
+
+    if (!attacker || !target) {
+      socket.emit('error', 'Jogador ou alvo inválido');
+      return;
+    }
+
+    const damage = this.damageService.calculateDamage(attacker.attack, target.defense);
+    target.hp -= damage;
+
+    if (target.hp <= 0) {
+      battle.isBattleActive = false;
+      battle.winnerId = attacker.playerId;
+    } else {
+      this.turnService.switchTurn(battle);
+    }
+
+    this.battleRepository.updateBattle(battle.id, battle);
+    this.server.to(battle.id).emit('battleUpdate', battle);
+  }
+
   @SubscribeMessage('battleAction')
   handleBattleAction(@MessageBody() data: { battleId: string; playerId: string; action: string }, @ConnectedSocket() client: Socket) {
-    const battle = this.battles.get(data.battleId);
+    const battle = this.battleRepository.getBattle(data.battleId);
     if (!battle || !battle.isBattleActive) {
       client.emit('error', 'Batalha não encontrada ou encerrada');
       return;
@@ -118,6 +153,7 @@ export class BattleGateway {
       this.turnService.switchTurn(battle);
     }
 
-    this.server.to(data.battleId).emit('battleUpdate', battle);
+    this.battleRepository.updateBattle(battle.id, battle);
+    this.server.to(battle.id).emit('battleUpdate', battle);
   }
 }
