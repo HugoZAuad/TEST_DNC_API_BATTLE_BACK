@@ -13,8 +13,7 @@ export class MonsterCreationService {
     defense: number;
     speed: number;
     specialAbility: string;
-    playerId: number;
-  }): Promise<Monster> {
-    return this.monsterRepository.create(data);
+  }, playerId: number): Promise<Monster> {
+    return this.monsterRepository.create(data, playerId);
   }
 }

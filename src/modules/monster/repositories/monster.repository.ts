@@ -34,10 +34,12 @@ export class MonsterRepository {
     defense: number;
     speed: number;
     specialAbility: string;
-    playerId: number;
-  }): Promise<Monster> {
+  }, playerId: number): Promise<Monster> {
     return prisma.monster.create({
-      data,
+      data: {
+        ...data,
+        playerId,
+      },
     });
   }
 

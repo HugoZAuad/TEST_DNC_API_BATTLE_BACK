@@ -26,7 +26,4 @@ export class CreateMonsterDto {
 
   @IsString()
   specialAbility: string;
-
-  @IsInt()
-  playerId: number;
 }
