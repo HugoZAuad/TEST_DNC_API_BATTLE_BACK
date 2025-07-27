@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PlayerModule } from './modules/player/player.module';
@@ -9,7 +11,16 @@ import { BattleModule } from './modules/battle/battle.module';
 import { ArenaModule } from './modules/arena/arena.module';
 
 @Module({
-  imports: [PlayerModule, MonsterModule, BattleModule, ArenaModule],
+  imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'TESTE_DNC_FRONT', 'dist'),
+      exclude: ['/api*'],
+    }),
+    PlayerModule,
+    MonsterModule,
+    BattleModule,
+    ArenaModule,
+  ],
   controllers: [AppController],
   providers: [
     AppService,
