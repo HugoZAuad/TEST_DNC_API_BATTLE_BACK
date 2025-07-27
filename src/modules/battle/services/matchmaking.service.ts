@@ -42,9 +42,9 @@ export class MatchmakingService {
         const opponentId = candidates[randomIndex];
 
         const player = await this.playerRepository.findById(opponentId);
-        const monster = await this.monsterRepository.findByPlayerId(opponentId);
+        const monsters = await this.monsterRepository.findByPlayerId(opponentId);
 
-        if (!player || !monster) {
+        if (!player || !monsters || monsters.length === 0) {
           this.removePlayer(opponentId);
           this.availablePlayers.add(opponentId);
 
@@ -54,6 +54,8 @@ export class MatchmakingService {
           }
           continue;
         }
+
+        const monster = monsters[0]; // Seleciona o primeiro monstro para o jogador
 
         return {
           playerId: player.id.toString(),
