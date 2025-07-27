@@ -18,8 +18,8 @@ export class MatchmakingService {
   ) {}
 
   async addPlayer(playerId: number): Promise<boolean> {
-    const monster = await this.monsterRepository.findByPlayerId(playerId);
-    if (!monster) {
+    const monsters = await this.monsterRepository.findByPlayerId(playerId);
+    if (!monsters || monsters.length === 0) {
       return false;
     }
     this.availablePlayers.add(playerId);
@@ -31,43 +31,49 @@ export class MatchmakingService {
   }
 
   async findOpponent(playerId: number): Promise<PlayerState | undefined> {
-    const candidates = Array.from(this.availablePlayers).filter(id => id !== playerId);
+    const waitTimeMs = 5000;
+    const pollIntervalMs = 500;
+    const startTime = Date.now();
 
-    if (candidates.length === 0) {
-      const bots = this.battleRepository.getBots();
-      if (!bots || bots.length === 0) {
-        return undefined;
+    while (Date.now() - startTime < waitTimeMs) {
+      const candidates = Array.from(this.availablePlayers).filter(id => id !== playerId);
+      if (candidates.length > 0) {
+        const randomIndex = Math.floor(Math.random() * candidates.length);
+        const opponentId = candidates[randomIndex];
+
+        const player = await this.playerRepository.findById(opponentId);
+        const monster = await this.monsterRepository.findByPlayerId(opponentId);
+
+        if (!player || !monster) {
+          this.removePlayer(opponentId);
+          this.availablePlayers.add(opponentId);
+
+          const socket = this.battleGateway.getSocketByPlayerId(opponentId.toString());
+          if (socket) {
+            this.battleGateway.sendErrorMessage(socket, 'A partida deu erro. Você foi colocado de volta na fila.');
+          }
+          continue;
+        }
+
+        return {
+          playerId: player.id.toString(),
+          hp: monster.hp,
+          attack: monster.attack,
+          defense: monster.defense,
+          speed: monster.speed,
+          specialAbility: monster.specialAbility,
+          isBot: false,
+        };
       }
-      const randomIndex = Math.floor(Math.random() * bots.length);
-      return bots[randomIndex];
+      await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
     }
 
-    const randomIndex = Math.floor(Math.random() * candidates.length);
-    const opponentId = candidates[randomIndex];
-
-    const player = await this.playerRepository.findById(opponentId);
-    const monster = await this.monsterRepository.findByPlayerId(opponentId);
-
-    if (!player || !monster) {
-      this.removePlayer(opponentId);
-      this.availablePlayers.add(opponentId);
-
-      const socket = this.battleGateway.getSocketByPlayerId(opponentId.toString());
-      if (socket) {
-        this.battleGateway.sendErrorMessage(socket, 'A partida deu erro. Você foi colocado de volta na fila.');
-      }
-
-      return this.findOpponent(playerId);
+    // Após 5 segundos, retorna bot
+    const bots = this.battleRepository.getBots();
+    if (!bots || bots.length === 0) {
+      return undefined;
     }
-
-    return {
-      playerId: player.id.toString(),
-      hp: monster.hp,
-      attack: monster.attack,
-      defense: monster.defense,
-      speed: monster.speed,
-      specialAbility: monster.specialAbility,
-      isBot: false,
-    };
+    const randomIndex = Math.floor(Math.random() * bots.length);
+    return bots[randomIndex];
   }
 }

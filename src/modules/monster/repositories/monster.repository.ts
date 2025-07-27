@@ -21,8 +21,8 @@ export class MonsterRepository {
     });
   }
 
-  async findByPlayerId(playerId: number): Promise<Monster | null> {
-    return prisma.monster.findFirst({
+  async findByPlayerId(playerId: number): Promise<Monster[]> {
+    return prisma.monster.findMany({
       where: { playerId },
     });
   }

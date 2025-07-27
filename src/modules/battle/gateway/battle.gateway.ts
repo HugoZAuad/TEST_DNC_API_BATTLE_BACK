@@ -72,6 +72,9 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('startBattle')
   async handleStartBattle(@MessageBody() data: { playerId: number }, @ConnectedSocket() client: Socket) {
+    // Enviar evento para o cliente indicando que está aguardando jogador
+    client.emit('waitingForPlayer', { message: 'Aguardando jogador real por até 5 segundos...' });
+
     const opponent = await this.matchmakingService.findOpponent(data.playerId);
     if (!opponent) {
       this.sendErrorMessage(client, 'Nenhum oponente disponível no momento.');

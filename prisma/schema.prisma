@@ -16,7 +16,7 @@ model Player {
 
 model Monster {
   id             Int      @id @default(autoincrement())
-  playerId       Int      @unique
+  playerId       Int
   name           String   @unique
   hp             Int
   attack         Int
