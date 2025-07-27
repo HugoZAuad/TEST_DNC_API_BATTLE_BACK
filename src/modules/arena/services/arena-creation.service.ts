@@ -27,4 +27,8 @@ export class ArenaCreationService {
   getArena(id: string): ArenaDto | undefined {
     return this.arenas.get(id);
   }
+
+  getAllArenas(): Map<string, ArenaDto> {
+    return this.arenas;
+  }
 }
