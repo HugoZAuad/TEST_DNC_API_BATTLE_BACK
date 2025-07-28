@@ -14,7 +14,15 @@ export class PlayerRepository {
   }
 
   async findById(id: number): Promise<Player | null> {
-    return this.prisma.player.findUnique({ where: { id } });
+    return this.prisma.player.findUnique({ where: { id },
+    select: {
+    id: true,
+    username: true,
+    wins: true,
+    losses: true,
+    createdAt: true,
+    updatedAt: true,
+  }, });
   }
 
   async findByName(username: string): Promise<Player | null> {
