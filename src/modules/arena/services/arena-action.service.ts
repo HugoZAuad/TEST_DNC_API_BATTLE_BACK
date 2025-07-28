@@ -15,22 +15,22 @@ export class ArenaActionService {
       return { error: 'Arena não encontrada' };
     }
 
-    // Delegar a ação para o BattleGateway conforme o tipo de ação
     switch (data.action) {
-      case 'attack':
-        // ataque - defesa
+      case 'attack': {
         const socket = this.battleGateway.getSocketByPlayerId(data.player_id.toString());
         if (!socket) {
           return { error: 'Socket do jogador não encontrado' };
         }
-        await this.battleGateway.handleAttack({ playerId: data.player_id.toString(), targetId: data.target_id! } as any, socket);
+        await this.battleGateway.handleAttack(
+          { playerId: data.player_id.toString(), targetId: data.target_id! },
+          socket,
+        );
         break;
+      }
       case 'defend':
-        // Defesa: jogador não pode atacar no próximo turno
         this.battleGateway.server.emit('defend', { playerId: data.player_id, arenaId });
         break;
       case 'special':
-        // Special: adiciona 25% ao ataque, só pode usar a cada 3 turnos
         this.battleGateway.server.emit('special', { playerId: data.player_id, arenaId });
         break;
       case 'forfeit':
