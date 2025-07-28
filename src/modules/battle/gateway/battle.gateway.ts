@@ -29,12 +29,9 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(private readonly matchmakingService: MatchmakingService) {}
 
-  handleConnection(client: Socket) {
-    console.log('Socket conectado:', client.id);
-  }
+  handleConnection(client: Socket) {}
 
   handleDisconnect(client: Socket) {
-    console.log('Socket desconectado:', client.id);
     for (const [playerId, socket] of this.playerSocketMap.entries()) {
       if (socket.id === client.id) {
         this.playerSocketMap.delete(playerId);
@@ -50,7 +47,6 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.emit('error', { message: 'playerId is required' });
         return;
       }
-      console.log('Evento playerAvailable recebido:', data, 'Socket:', client.id);
       this.playerSocketMap.set(data.playerId.toString(), client);
       const player: PlayerState = {
         playerId: data.playerId.toString(),
@@ -68,15 +64,11 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const match = this.matchmakingService.getMatch();
       if (match) {
         const battleId = `battle-${Date.now()}`;
-        console.log('Match found:', match);
 
-        // Join players to the battle room and notify
         match.forEach(p => {
           const socket = this.getSocketByPlayerId(p.playerId);
           if (socket) {
             socket.join(battleId);
-          } else {
-            console.warn(`Socket not found for playerId ${p.playerId}`);
           }
         });
 
@@ -85,7 +77,6 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       client.emit('availableConfirmed');
     } catch (error) {
-      console.error('Error in handlePlayerAvailable:', error);
       client.emit('error', { message: 'Internal server error' });
     }
   }
@@ -95,29 +86,14 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   public async handleAttack(data: any, client: Socket) {
-    console.log(
-      'handleAttack chamado via serviço:',
-      data,
-      'Socket:',
-      client.id
-    );
-    client.emit('battleUpdate', {
-      /* ...dados atualizados da batalha... */
-    });
+    client.emit('battleUpdate', {});
   }
 
   @SubscribeMessage('startBattle')
   public async handleStartBattle(client: Socket, data: any) {
-    console.log(
-      'Evento startBattle recebido:',
-      data,
-      'Socket:',
-      client.id
-    );
     const battleId = data.battleId;
     if (battleId) {
       this.server.to(battleId).emit('battleStarted', { battleState: data });
-      console.log(`Evento battleStarted emitido para a sala ${battleId}`);
     } else {
       client.emit('error', { message: 'battleId is required to start battle' });
     }

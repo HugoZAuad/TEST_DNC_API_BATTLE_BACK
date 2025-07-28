@@ -223,6 +223,21 @@ Para acessar, configurar ou alterar o banco, utilize o painel do Supabase e atua
 
 ---
 
+## Melhorias Futuras
+
+Esta seção lista algumas melhorias e funcionalidades planejadas para futuras versões da API, visando aprimorar a experiência do usuário e a robustez do sistema:
+
+- Implementação de autenticação e autorização para maior segurança.
+- Adição de suporte a múltiplos tipos de monstros com habilidades especiais diferenciadas.
+- Melhoria na interface de comunicação em tempo real para maior escalabilidade.
+- Otimização do desempenho das batalhas e consultas ao banco de dados.
+- Implementação de um sistema de ranking e estatísticas detalhadas dos jogadores.
+- Criação de uma interface administrativa para gerenciamento dos dados.
+- Suporte a internacionalização para múltiplos idiomas.
+- Testes automatizados mais abrangentes, incluindo testes de carga e performance.
+
+---
+
 ## Considerações Finais
 
 Este projeto foi desenvolvido com foco em boas práticas, arquitetura limpa e testabilidade, visando facilitar a manutenção e evolução futura da aplicação. A modularização e o uso de tecnologias modernas garantem escalabilidade, robustez e facilidade de uso.

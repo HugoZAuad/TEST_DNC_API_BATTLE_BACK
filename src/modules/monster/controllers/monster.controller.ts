@@ -30,8 +30,7 @@ export class MonsterController {
 
   @Post()
   async createMonster(@Body() createMonsterDto: CreateMonsterDto): Promise<any> {
-    // Assuming playerId is obtained from authenticated user context or elsewhere
-    const playerId = 1; // TODO: Replace with actual playerId retrieval logic
+    const playerId = 1;
     return await this.monsterCreationService.create(createMonsterDto, playerId);
   }
 

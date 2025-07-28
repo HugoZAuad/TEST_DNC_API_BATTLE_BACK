@@ -23,7 +23,6 @@ export class ArenaJoinService {
       return { error: 'Arena cheia' };
     }
 
-    // Verificar se jogador já está na arena
     const existingPlayer = arena.players.find(p => p.player_id === data.player_id);
     if (existingPlayer) {
       return { error: 'Jogador já está na arena' };

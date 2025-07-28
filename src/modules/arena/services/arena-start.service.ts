@@ -16,7 +16,6 @@ export class ArenaStartService {
       return { error: 'Número insuficiente de jogadores para iniciar a batalha' };
     }
 
-    // Inicializar estado da batalha
     arena.battleState = {
       turn: 1,
       players: arena.players.map(p => ({

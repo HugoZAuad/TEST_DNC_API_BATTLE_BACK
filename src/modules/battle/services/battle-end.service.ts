@@ -1,4 +1,3 @@
-// src/modules/battle/services/battle-end.service.ts
 import { Injectable } from '@nestjs/common';
 import { BattleRepository } from '../repositories/battle.repository';
 import { PlayerRepository } from '../../player/repositories/player.repository';

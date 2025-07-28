@@ -87,22 +87,17 @@ export class ArenaStateService {
   }
 
   private async startBattleVsBot(player: any, socket: any, arenaId: string) {
-    // Cria um bot fictício
     const bot = {
       player_id: 'BOT',
       username: 'Bot',
-      // outros atributos do bot...
     };
 
     console.log(`Iniciando batalha do player ${player.player_id} contra o bot na arena ${arenaId}.`);
-
-    // Envia o evento de início de batalha para o front-end do player
       this.battleGateway.handleStartBattle(
         socket,
         { playerId: player.player_id, opponent: bot, isBot: true, arenaId },
       );
 
-    // Simula o ataque do bot após 2 segundos
     setTimeout(() => {
       console.log(`Bot atacando o player ${player.player_id} na arena ${arenaId}`);
       this.battleGateway.handleAttack(
