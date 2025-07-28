@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MatchmakingService } from '../matchmaking.service';
-import { PlayerRepository } from '../../../player/repositories/player.repository';
-import { BattleRepository } from '../../repositories/battle.repository';
-import { MonsterRepository } from '../../../monster/repositories/monster.repository';
-import { BattleGateway } from '../../gateway/battle.gateway';
 import { PlayerState } from '../../interfaces/interfaces/player-state.interface';
 
 describe('MatchmakingService', () => {
@@ -23,70 +19,83 @@ describe('MatchmakingService', () => {
     },
   ];
 
-  const mockBattleRepository = {
-    createBattle: jest.fn(),
-    getBots: jest.fn().mockReturnValue(bots),
-  };
-
-  const mockPlayerRepository = {
-    findById: jest.fn(),
-  };
-
-  const mockMonsterRepository = {
-    findByPlayerId: jest.fn(),
-  };
-
-  const mockBattleGateway = {
-    notifyBattleStart: jest.fn(),
-    getSocketByPlayerId: jest.fn(),
-    sendErrorMessage: jest.fn(),
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        MatchmakingService,
-        { provide: BattleRepository, useValue: mockBattleRepository },
-        { provide: PlayerRepository, useValue: mockPlayerRepository },
-        { provide: MonsterRepository, useValue: mockMonsterRepository },
-        { provide: BattleGateway, useValue: mockBattleGateway },
-      ],
+      providers: [MatchmakingService],
     }).compile();
 
     service = module.get<MatchmakingService>(MatchmakingService);
   });
 
-  it('deve retornar um bot como oponente se não houver jogadores disponíveis', async () => {
-    const opponent = await service.findOpponent(1, 100); // tempo reduzido
-
-    expect(opponent).toBeDefined();
-    expect(opponent!.isBot).toBe(true);
-    expect(opponent!.playerId).toBe('bot1');
-    expect(mockBattleRepository.getBots).toHaveBeenCalled();
+  it('should add player to waiting list', () => {
+    const player: PlayerState = {
+      playerId: 'player1',
+      hp: 100,
+      attack: 10,
+      defense: 5,
+      speed: 10,
+      specialAbility: 'None',
+      isBot: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    service.addPlayer(player);
+    expect(service['waitingPlayers']).toContain(player);
   });
 
-  it('deve retornar um jogador disponível se houver jogadores', async () => {
-    const mockPlayerId = 2;
+  it('should return two players if two or more waiting', () => {
+    const player1: PlayerState = {
+      playerId: 'player1',
+      hp: 100,
+      attack: 10,
+      defense: 5,
+      speed: 10,
+      specialAbility: 'None',
+      isBot: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const player2: PlayerState = {
+      playerId: 'player2',
+      hp: 100,
+      attack: 12,
+      defense: 6,
+      speed: 11,
+      specialAbility: 'None',
+      isBot: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    service.addPlayer(player1);
+    service.addPlayer(player2);
+    const match = service.getMatch();
+    expect(match).toHaveLength(2);
+    expect(match).toContain(player1);
+    expect(match).toContain(player2);
+  });
 
-    mockPlayerRepository.findById.mockResolvedValueOnce({ id: mockPlayerId });
+  it('should return one player and one bot if only one player waiting', () => {
+    const player1: PlayerState = {
+      playerId: 'player1',
+      hp: 100,
+      attack: 10,
+      defense: 5,
+      speed: 10,
+      specialAbility: 'None',
+      isBot: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    service.addPlayer(player1);
+    const match = service.getMatch();
+    expect(match).not.toBeNull();
+    expect(match).toHaveLength(2);
+    expect(match).toContain(player1);
+    expect(match!.some(p => p.isBot)).toBe(true);
+  });
 
-    mockMonsterRepository.findByPlayerId.mockResolvedValueOnce([
-      {
-        hp: 100,
-        attack: 20,
-        defense: 10,
-        speed: 15,
-        specialAbility: 'Shadow Strike',
-      },
-    ]);
-
-    await service.addPlayer(mockPlayerId);
-
-    const opponent = await service.findOpponent(1, 100); // tempo reduzido
-
-    expect(opponent).toBeDefined();
-    expect(opponent!.isBot).toBe(false);
-    expect(opponent!.playerId).toBe(mockPlayerId.toString());
-    expect(opponent!.specialAbility).toBe('Shadow Strike');
+  it('should return null if no players waiting', () => {
+    const match = service.getMatch();
+    expect(match).toBeNull();
   });
 });

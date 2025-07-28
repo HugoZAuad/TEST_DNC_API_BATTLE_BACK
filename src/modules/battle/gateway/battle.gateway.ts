@@ -6,6 +6,9 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { Injectable } from '@nestjs/common';
+import { MatchmakingService } from '../services/matchmaking.service';
+import { PlayerState } from '../interfaces/interfaces/player-state.interface';
 
 @WebSocketGateway({
   cors: {
@@ -17,11 +20,14 @@ import { Server, Socket } from 'socket.io';
     credentials: true,
   },
 })
+@Injectable()
 export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
   private playerSocketMap = new Map<string, Socket>();
+
+  constructor(private readonly matchmakingService: MatchmakingService) {}
 
   handleConnection(client: Socket) {
     console.log('Socket conectado:', client.id);
@@ -41,6 +47,34 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handlePlayerAvailable(client: Socket, data: any) {
     console.log('Evento playerAvailable recebido:', data, 'Socket:', client.id);
     this.playerSocketMap.set(data.playerId.toString(), client);
+    const player: PlayerState = {
+      playerId: data.playerId.toString(),
+      hp: 100,
+      attack: 10,
+      defense: 5,
+      speed: 10,
+      specialAbility: 'None',
+      isBot: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.matchmakingService.addPlayer(player);
+
+    const match = this.matchmakingService.getMatch();
+    if (match) {
+      const battleId = `battle-${Date.now()}`;
+      console.log('Match found:', match);
+
+      // Notify players in the match
+      match.forEach(p => {
+        const socket = this.getSocketByPlayerId(p.playerId);
+        if (socket) {
+          socket.join(battleId);
+          socket.emit('battleStarted', { battleId, players: match });
+        }
+      });
+    }
+
     client.emit('availableConfirmed');
   }
 
