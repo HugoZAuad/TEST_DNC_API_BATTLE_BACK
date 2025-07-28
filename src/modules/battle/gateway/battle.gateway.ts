@@ -45,38 +45,49 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('playerAvailable')
   handlePlayerAvailable(client: Socket, data: any) {
-    console.log('Evento playerAvailable recebido:', data, 'Socket:', client.id);
-    this.playerSocketMap.set(data.playerId.toString(), client);
-    const player: PlayerState = {
-      playerId: data.playerId.toString(),
-      hp: 100,
-      attack: 10,
-      defense: 5,
-      speed: 10,
-      specialAbility: 'None',
-      isBot: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.matchmakingService.addPlayer(player);
+    try {
+      if (!data || !data.playerId) {
+        client.emit('error', { message: 'playerId is required' });
+        return;
+      }
+      console.log('Evento playerAvailable recebido:', data, 'Socket:', client.id);
+      this.playerSocketMap.set(data.playerId.toString(), client);
+      const player: PlayerState = {
+        playerId: data.playerId.toString(),
+        hp: 100,
+        attack: 10,
+        defense: 5,
+        speed: 10,
+        specialAbility: 'None',
+        isBot: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      this.matchmakingService.addPlayer(player);
 
-    const match = this.matchmakingService.getMatch();
-    if (match) {
-      const battleId = `battle-${Date.now()}`;
-      console.log('Match found:', match);
+      const match = this.matchmakingService.getMatch();
+      if (match) {
+        const battleId = `battle-${Date.now()}`;
+        console.log('Match found:', match);
 
-      // Join players to the battle room and notify
-      match.forEach(p => {
-        const socket = this.getSocketByPlayerId(p.playerId);
-        if (socket) {
-          socket.join(battleId);
-        }
-      });
+        // Join players to the battle room and notify
+        match.forEach(p => {
+          const socket = this.getSocketByPlayerId(p.playerId);
+          if (socket) {
+            socket.join(battleId);
+          } else {
+            console.warn(`Socket not found for playerId ${p.playerId}`);
+          }
+        });
 
-      this.server.to(battleId).emit('battleStarted', { battleId, players: match });
+        this.server.to(battleId).emit('battleStarted', { battleId, players: match });
+      }
+
+      client.emit('availableConfirmed');
+    } catch (error) {
+      console.error('Error in handlePlayerAvailable:', error);
+      client.emit('error', { message: 'Internal server error' });
     }
-
-    client.emit('availableConfirmed');
   }
 
   public getSocketByPlayerId(playerId: string): Socket | undefined {
