@@ -5,10 +5,10 @@ import { PrismaClient, Player } from '@prisma/client';
 export class PlayerRepository {
   private readonly prisma = new PrismaClient();
 
-  async create(username: string, wins = 0, losses = 0): Promise<Player> {
+  async create(name: string, wins = 0, losses = 0): Promise<Player> {
     return this.prisma.player.create({
       data: {
-        username,
+        name,
         wins,
         losses,
       },
@@ -21,9 +21,9 @@ export class PlayerRepository {
     });
   }
 
-  async findByName(username: string): Promise<Player | null> {
+  async findByName(name: string): Promise<Player | null> {
     return this.prisma.player.findFirst({
-      where: { username },
+      where: { name },
     });
   }
 
@@ -31,7 +31,7 @@ export class PlayerRepository {
     return this.prisma.player.findMany();
   }
 
-  async update(id: number, username?: string): Promise<Player> {
+  async update(id: number, name?: string): Promise<Player> {
     const player = await this.findById(id);
     if (!player) {
       throw new NotFoundException('Jogador não encontrado');
@@ -40,7 +40,7 @@ export class PlayerRepository {
     return this.prisma.player.update({
       where: { id },
       data: {
-        ...(username && { username }),
+        ...(name && { name }),
       },
     });
   }

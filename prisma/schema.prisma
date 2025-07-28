@@ -9,7 +9,7 @@ datasource db {
 
 model Player {
   id        Int      @id @default(autoincrement())
-  username  String
+  name      String   @unique
   wins      Int      @default(0)
   losses    Int      @default(0)
   createdAt DateTime @default(now())
