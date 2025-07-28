@@ -65,14 +65,15 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const battleId = `battle-${Date.now()}`;
       console.log('Match found:', match);
 
-      // Notify players in the match
+      // Join players to the battle room and notify
       match.forEach(p => {
         const socket = this.getSocketByPlayerId(p.playerId);
         if (socket) {
           socket.join(battleId);
-          socket.emit('battleStarted', { battleId, players: match });
         }
       });
+
+      this.server.to(battleId).emit('battleStarted', { battleId, players: match });
     }
 
     client.emit('availableConfirmed');
