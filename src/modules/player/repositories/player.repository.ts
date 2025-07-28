@@ -5,7 +5,7 @@ import { PrismaClient, Player } from '@prisma/client';
 export class PlayerRepository {
   private prisma = new PrismaClient();
 
-  async create(username: string): Promise<Player> {
+  async create(username: string, wins: number = 0, losses: number = 0): Promise<Player> {
     return this.prisma.player.create({
       data: {
         username,

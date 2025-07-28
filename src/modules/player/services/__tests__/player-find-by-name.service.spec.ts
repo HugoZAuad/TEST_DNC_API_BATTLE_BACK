@@ -28,7 +28,7 @@ describe('PlayerFindByNameService', () => {
   });
 
   it('deve chamar repository.findByName e retornar o resultado', async () => {
-    const player = { id: 1, username: 'player1', createdAt: new Date(), updatedAt: new Date() };
+    const player = { id: 1, username: 'player1', wins:0, losses:0, createdAt: new Date(), updatedAt: new Date() };
     jest.spyOn(repository, 'findByName').mockResolvedValue(player);
 
     const result = await service.findByName('player1');

@@ -1,5 +1,6 @@
 import { MonsterCreationService } from '../monster-creation.service';
 import { MonsterRepository } from '../../repositories/monster.repository';
+import { Monster } from '@prisma/client';
 
 describe('MonsterCreationService', () => {
   let service: MonsterCreationService;
@@ -20,14 +21,20 @@ describe('MonsterCreationService', () => {
       defense: 5,
       speed: 7,
       specialAbility: 'Stealth',
-      playerId: 1,
     };
-    const expectedMonster = { id: 1, ...inputData, createdAt: new Date(), updatedAt: new Date() };
+    const playerId = 1; // ID do jogador
+    const expectedMonster: Monster = {
+      id: 1,
+      ...inputData,
+      playerId, // Adicionando playerId
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
 
     jest.spyOn(repository, 'create').mockResolvedValue(expectedMonster);
 
-    const result = await service.create(inputData);
+    const result = await service.create(inputData, playerId);
     expect(result).toEqual(expectedMonster);
-    expect(repository.create).toHaveBeenCalledWith(inputData);
+    expect(repository.create).toHaveBeenCalledWith(inputData, playerId);
   });
 });

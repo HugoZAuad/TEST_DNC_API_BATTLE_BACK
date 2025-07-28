@@ -33,6 +33,8 @@ describe('PlayerUpdateService', () => {
     const playerMock = {
       id,
       username: usernameAntigo,
+      wins:0,
+      losses:0,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -66,6 +68,8 @@ describe('PlayerUpdateService', () => {
     const player = {
       id,
       username,
+      wins:0,
+      losses:0,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

@@ -1,77 +1,92 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MatchmakingService } from '../matchmaking.service';
+import { PlayerRepository } from '../../../player/repositories/player.repository';
 import { BattleRepository } from '../../repositories/battle.repository';
 import { MonsterRepository } from '../../../monster/repositories/monster.repository';
-import { PlayerRepository } from '../../../player/repositories/player.repository';
 import { BattleGateway } from '../../gateway/battle.gateway';
+import { PlayerState } from '../../interfaces/interfaces/player-state.interface';
 
 describe('MatchmakingService', () => {
   let service: MatchmakingService;
+
+  const bots: PlayerState[] = [
+    {
+      playerId: 'bot1',
+      hp: 100,
+      attack: 15,
+      defense: 5,
+      speed: 10,
+      specialAbility: 'Fireball',
+      isBot: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ];
+
+  const mockBattleRepository = {
+    createBattle: jest.fn(),
+    getBots: jest.fn().mockReturnValue(bots),
+  };
+
+  const mockPlayerRepository = {
+    findById: jest.fn(),
+  };
+
+  const mockMonsterRepository = {
+    findByPlayerId: jest.fn(),
+  };
+
+  const mockBattleGateway = {
+    notifyBattleStart: jest.fn(),
+    getSocketByPlayerId: jest.fn(),
+    sendErrorMessage: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MatchmakingService,
-        {
-          provide: BattleRepository,
-          useValue: {
-            getBots: jest.fn().mockReturnValue([
-              {
-                playerId: 'bot1',
-                hp: 100,
-                attack: 30,
-                defense: 20,
-                speed: 10,
-                specialAbility: 'fire',
-                isBot: true,
-              },
-            ]),
-          },
-        },
-        {
-          provide: MonsterRepository,
-          useValue: {
-            findByPlayerId: jest.fn().mockImplementation((id) =>
-              id === 1 ? [{ hp: 100, attack: 50, defense: 30, speed: 20, specialAbility: 'ice' }] : [],
-            ),
-          },
-        },
-        {
-          provide: PlayerRepository,
-          useValue: {
-            findById: jest.fn().mockReturnValue({ id: 2 }),
-          },
-        },
-        {
-          provide: BattleGateway,
-          useValue: {
-            getSocketByPlayerId: jest.fn(),
-            sendErrorMessage: jest.fn(),
-          },
-        },
+        { provide: BattleRepository, useValue: mockBattleRepository },
+        { provide: PlayerRepository, useValue: mockPlayerRepository },
+        { provide: MonsterRepository, useValue: mockMonsterRepository },
+        { provide: BattleGateway, useValue: mockBattleGateway },
       ],
     }).compile();
 
     service = module.get<MatchmakingService>(MatchmakingService);
   });
 
-  it('deve estar definido', () => {
-    expect(service).toBeDefined();
+  it('deve retornar um bot como oponente se não houver jogadores disponíveis', async () => {
+    const opponent = await service.findOpponent(1, 100); // tempo reduzido
+
+    expect(opponent).toBeDefined();
+    expect(opponent!.isBot).toBe(true);
+    expect(opponent!.playerId).toBe('bot1');
+    expect(mockBattleRepository.getBots).toHaveBeenCalled();
   });
 
-  it('deve adicionar jogador com monstros válidos', async () => {
-    const resultado = await service.addPlayer(1);
-    expect(resultado).toBe(true);
-  });
+  it('deve retornar um jogador disponível se houver jogadores', async () => {
+    const mockPlayerId = 2;
 
-  it('não deve adicionar jogador sem monstros', async () => {
-    const resultado = await service.addPlayer(999);
-    expect(resultado).toBe(false);
-  });
+    mockPlayerRepository.findById.mockResolvedValueOnce({ id: mockPlayerId });
 
-  it('deve encontrar um bot como oponente se não houver jogadores disponíveis', async () => {
-    const oponente = await service.findOpponent(1);
-    expect(oponente).toBeDefined();
-    expect(oponente?.isBot).toBe(true);
+    mockMonsterRepository.findByPlayerId.mockResolvedValueOnce([
+      {
+        hp: 100,
+        attack: 20,
+        defense: 10,
+        speed: 15,
+        specialAbility: 'Shadow Strike',
+      },
+    ]);
+
+    await service.addPlayer(mockPlayerId);
+
+    const opponent = await service.findOpponent(1, 100); // tempo reduzido
+
+    expect(opponent).toBeDefined();
+    expect(opponent!.isBot).toBe(false);
+    expect(opponent!.playerId).toBe(mockPlayerId.toString());
+    expect(opponent!.specialAbility).toBe('Shadow Strike');
   });
 });

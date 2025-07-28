@@ -3,15 +3,14 @@ import { ArenaStateService } from '../arena-state.service';
 
 describe('ArenaCreationService', () => {
   let service: ArenaCreationService;
-  let mockArenaStateService: any;
+  let mockArenaStateService: jest.Mocked<ArenaStateService>;
 
   beforeEach(() => {
     mockArenaStateService = {
       openArena: jest.fn(),
-    };
-    service = new ArenaCreationService(
-      mockArenaStateService as unknown as ArenaStateService,
-    );
+    } as unknown as jest.Mocked<ArenaStateService>;
+
+    service = new ArenaCreationService(mockArenaStateService);
   });
 
   it('deve criar uma arena com as propriedades corretas', () => {
@@ -36,5 +35,21 @@ describe('ArenaCreationService', () => {
   it('deve retornar undefined para arena inexistente', () => {
     const foundArena = service.getArena('non-existing-id');
     expect(foundArena).toBeUndefined();
+  });
+
+  it('deve retornar todas as arenas criadas', () => {
+    service.getAllArenas().clear();
+
+    const data1 = { name: 'Arena 1', max_players: 2 };
+    const data2 = { name: 'Arena 2', max_players: 4 };
+
+    const arena1 = service.createArena(data1);
+    const arena2 = service.createArena(data2);
+
+    const allArenas = service.getAllArenas();
+
+    expect(allArenas.size).toBe(2);
+    expect(allArenas.get(arena1.id)).toEqual(arena1);
+    expect(allArenas.get(arena2.id)).toEqual(arena2);
   });
 });

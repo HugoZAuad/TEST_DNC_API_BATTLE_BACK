@@ -9,6 +9,8 @@ export const bots: PlayerState[] = [
     speed: 10,
     specialAbility: 'Fireball',
     isBot: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   },
   {
     playerId: 'bot2',
@@ -18,6 +20,8 @@ export const bots: PlayerState[] = [
     speed: 12,
     specialAbility: 'Ice Blast',
     isBot: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   },
   {
     playerId: 'bot3',
@@ -27,6 +31,8 @@ export const bots: PlayerState[] = [
     speed: 8,
     specialAbility: 'Thunder Strike',
     isBot: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   },
   {
     playerId: 'bot4',
@@ -36,6 +42,8 @@ export const bots: PlayerState[] = [
     speed: 9,
     specialAbility: 'Poison Dart',
     isBot: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   },
   {
     playerId: 'bot5',
@@ -45,6 +53,8 @@ export const bots: PlayerState[] = [
     speed: 11,
     specialAbility: 'Wind Slash',
     isBot: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   },
   {
     playerId: 'bot6',
@@ -54,5 +64,7 @@ export const bots: PlayerState[] = [
     speed: 10,
     specialAbility: 'Earthquake',
     isBot: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   },
 ];

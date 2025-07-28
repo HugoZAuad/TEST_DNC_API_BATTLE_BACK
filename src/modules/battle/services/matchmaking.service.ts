@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { PlayerRepository } from '../../player/repositories/player.repository';
 import { BattleRepository } from '../repositories/battle.repository';
 import { MonsterRepository } from '../../monster/repositories/monster.repository';
-import { PlayerRepository } from '../../player/repositories/player.repository';
-import { PlayerState } from '../interfaces/interfaces/player-state.interface';
 import { BattleGateway } from '../gateway/battle.gateway';
+import { PlayerState } from '../interfaces/interfaces/player-state.interface';
 
 @Injectable()
 export class MatchmakingService {
@@ -16,57 +16,43 @@ export class MatchmakingService {
     private readonly battleGateway: BattleGateway,
   ) {}
 
-  async addPlayer(playerId: number): Promise<boolean> {
-    const monsters = await this.monsterRepository.findByPlayerId(playerId);
-    if (!monsters || monsters.length === 0) {
-      return false;
-    }
+  async addPlayer(playerId: number): Promise<void> {
     this.availablePlayers.add(playerId);
-    return true;
   }
 
-  removePlayer(playerId: number) {
-    this.availablePlayers.delete(playerId);
-  }
-
-  async findOpponent(playerId: number): Promise<PlayerState | undefined> {
-    const waitTimeMs = 5000;
+  async findOpponent(playerId: number, waitTimeMs = 5000): Promise<PlayerState | undefined> {
     const pollIntervalMs = 500;
     const startTime = Date.now();
 
     while (Date.now() - startTime < waitTimeMs) {
-      const candidates = Array.from(this.availablePlayers).filter(id => id !== playerId);
-      if (candidates.length > 0) {
-        const opponentId = candidates[Math.floor(Math.random() * candidates.length)];
+      for (const opponentId of this.availablePlayers) {
+        if (opponentId !== playerId) {
+          this.availablePlayers.delete(opponentId);
 
-        const player = await this.playerRepository.findById(opponentId);
-        const monsters = await this.monsterRepository.findByPlayerId(opponentId);
+          const opponent = await this.playerRepository.findById(opponentId);
+          const monsters = await this.monsterRepository.findByPlayerId(opponentId);
 
-        if (!player || !monsters || monsters.length === 0) {
-          this.removePlayer(opponentId);
-          this.availablePlayers.add(opponentId);
-
-          const socket = this.battleGateway.getSocketByPlayerId(opponentId.toString());
-          if (socket) {
-            this.battleGateway.sendErrorMessage(socket, 'Erro na partida. Você foi colocado de volta na fila.');
+          if (!opponent || monsters.length === 0) {
+            continue;
           }
-          continue;
+
+          const monster = monsters[0];
+
+          return {
+            playerId: opponentId.toString(),
+            hp: monster.hp,
+            attack: monster.attack,
+            defense: monster.defense,
+            speed: monster.speed,
+            specialAbility: monster.specialAbility,
+            isBot: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
         }
-
-        const monster = monsters[0];
-
-        return {
-          playerId: player.id.toString(),
-          hp: monster.hp,
-          attack: monster.attack,
-          defense: monster.defense,
-          speed: monster.speed,
-          specialAbility: monster.specialAbility,
-          isBot: false,
-        };
       }
 
-      await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
     }
 
     const bots = this.battleRepository.getBots();

@@ -6,12 +6,20 @@ import { PlayerRepository } from '../../player/repositories/player.repository';
 export class BattleEndService {
   constructor(
     private readonly battleRepository: BattleRepository,
-    private readonly playerRepository: PlayerRepository,
+    private readonly playerRepository: PlayerRepository
   ) {}
 
-  async handleBattleEnd(winnerId: string, loserId: string): Promise<void> {
+  async handleBattleEnd(
+    winnerId: string,
+    loserId: string
+  ): Promise<{ winnerId: string; isBattleActive: boolean }> {
     await this.battleRepository.endBattle(winnerId, loserId);
     await this.playerRepository.updateStats(winnerId, { wins: 1 });
     await this.playerRepository.updateStats(loserId, { losses: 1 });
+
+    return {
+      winnerId,
+      isBattleActive: false,
+    };
   }
 }

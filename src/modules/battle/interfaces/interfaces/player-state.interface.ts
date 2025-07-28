@@ -6,6 +6,6 @@ export interface PlayerState {
   speed: number;
   specialAbility: string;
   isBot: boolean;
-  specialActive?: boolean;
-  specialCooldown?: number;
+  createdAt: Date;
+  updatedAt: Date;
 }

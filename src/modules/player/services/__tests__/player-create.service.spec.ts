@@ -28,6 +28,8 @@ describe('PlayerCreateService', () => {
     const player = {
       id: 1,
       username,
+      wins: 0,
+      losses: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

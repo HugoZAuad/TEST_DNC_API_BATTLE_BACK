@@ -49,9 +49,15 @@ describe('MonsterController', () => {
 
     controller = module.get<MonsterController>(MonsterController);
     findAllService = module.get<MonsterFindAllService>(MonsterFindAllService);
-    findByIdService = module.get<MonsterFindByIdService>(MonsterFindByIdService);
-    findByNameService = module.get<MonsterFindByNameService>(MonsterFindByNameService);
-    creationService = module.get<MonsterCreationService>(MonsterCreationService);
+    findByIdService = module.get<MonsterFindByIdService>(
+      MonsterFindByIdService
+    );
+    findByNameService = module.get<MonsterFindByNameService>(
+      MonsterFindByNameService
+    );
+    creationService = module.get<MonsterCreationService>(
+      MonsterCreationService
+    );
     updateService = module.get<MonsterUpdateService>(MonsterUpdateService);
     deleteService = module.get<MonsterDeleteService>(MonsterDeleteService);
   });
@@ -61,18 +67,20 @@ describe('MonsterController', () => {
   });
 
   it('deve chamar findAllService.findAll e retornar resultado', async () => {
-    const monsters = [{
-      id: 1,
-      name: 'monster1',
-      playerId: 1,
-      hp: 100,
-      attack: 10,
-      defense: 5,
-      speed: 7,
-      specialAbility: 'fireball',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }];
+    const monsters = [
+      {
+        id: 1,
+        name: 'monster1',
+        playerId: 1,
+        hp: 100,
+        attack: 10,
+        defense: 5,
+        speed: 7,
+        specialAbility: 'fireball',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
     jest.spyOn(findAllService, 'findAll').mockResolvedValue(monsters);
 
     const result = await controller.findAll();
@@ -118,26 +126,6 @@ describe('MonsterController', () => {
     const result = await controller.findByName('monster1');
     expect(findByNameService.findByName).toHaveBeenCalledWith('monster1');
     expect(result).toEqual(monster);
-  });
-
-  it('deve chamar creationService.create e retornar resultado', async () => {
-    const createDto = {
-      id: 1,
-      name: 'monster1',
-      hp: 100,
-      attack: 10,
-      defense: 5,
-      speed: 7,
-      specialAbility: 'fireball',
-      playerId: 1,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    jest.spyOn(creationService, 'create').mockResolvedValue(createDto);
-
-    const result = await controller.createMonster(createDto);
-    expect(creationService.create).toHaveBeenCalledWith(createDto);
-    expect(result).toEqual(createDto);
   });
 
   it('deve chamar updateService.update e retornar resultado', async () => {

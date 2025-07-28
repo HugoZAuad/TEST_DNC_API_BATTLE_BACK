@@ -1,4 +1,6 @@
 import { BattleTurnService } from '../battle-turn.service';
+import { BattleState } from '../../interfaces/interfaces/battle-state.interface';
+import { PlayerState } from '../../interfaces/interfaces/player-state.interface';
 
 describe('BattleTurnService', () => {
   let service: BattleTurnService;
@@ -7,43 +9,60 @@ describe('BattleTurnService', () => {
     service = new BattleTurnService();
   });
 
-  it('deve estar definido', () => {
+  const mockPlayers: PlayerState[] = [
+    {
+      playerId: 'player1',
+      hp: 100,
+      attack: 10,
+      defense: 5,
+      speed: 7,
+      specialAbility: 'None',
+      isBot: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      playerId: 'player2',
+      hp: 100,
+      attack: 10,
+      defense: 5,
+      speed: 7,
+      specialAbility: 'None',
+      isBot: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ];
+
+  it('deve ser definido', () => {
     expect(service).toBeDefined();
   });
 
   it('deve retornar true se for o turno do jogador', () => {
-    const battleState = {
+    const battleState: BattleState = {
+      id: 'battle1',
+      players: mockPlayers,
       currentTurnPlayerId: 'player1',
-      players: [
-        { playerId: 'player1', hp: 100, attack: 10, defense: 5, speed: 7, specialAbility: 'None', isBot: false, createdAt: new Date(), updatedAt: new Date() },
-        { playerId: 'player2', hp: 100, attack: 10, defense: 5, speed: 7, specialAbility: 'None', isBot: false, createdAt: new Date(), updatedAt: new Date() }
-      ],
       isBattleActive: true,
     };
-    const result = service.isPlayerTurn(battleState, 'player1');
-    expect(result).toBe(true);
+    expect(service.isPlayerTurn(battleState, 'player1')).toBe(true);
   });
 
   it('deve retornar false se não for o turno do jogador', () => {
-    const battleState = {
+    const battleState: BattleState = {
+      id: 'battle1',
+      players: mockPlayers,
       currentTurnPlayerId: 'player1',
-      players: [
-        { playerId: 'player1', hp: 100, attack: 10, defense: 5, speed: 7, specialAbility: 'None', isBot: false, createdAt: new Date(), updatedAt: new Date() },
-        { playerId: 'player2', hp: 100, attack: 10, defense: 5, speed: 7, specialAbility: 'None', isBot: true, createdAt: new Date(), updatedAt: new Date() }
-      ],
       isBattleActive: true,
     };
-    const result = service.isPlayerTurn(battleState, 'player2');
-    expect(result).toBe(false);
+    expect(service.isPlayerTurn(battleState, 'player2')).toBe(false);
   });
 
   it('deve alternar o turno para o próximo jogador', () => {
-    const battleState = {
+    const battleState: BattleState = {
+      id: 'battle1',
+      players: mockPlayers,
       currentTurnPlayerId: 'player1',
-      players: [
-        { playerId: 'player1', hp: 100, attack: 10, defense: 5, speed: 7, specialAbility: 'None', isBot: false, createdAt: new Date(), updatedAt: new Date() },
-        { playerId: 'player2', hp: 100, attack: 10, defense: 5, speed: 7, specialAbility: 'None', isBot: true, createdAt: new Date(), updatedAt: new Date() }
-      ],
       isBattleActive: true,
     };
     const newState = service.switchTurn(battleState);
@@ -51,12 +70,10 @@ describe('BattleTurnService', () => {
   });
 
   it('deve alternar o turno para o primeiro jogador após o último', () => {
-    const battleState = {
+    const battleState: BattleState = {
+      id: 'battle1',
+      players: mockPlayers,
       currentTurnPlayerId: 'player2',
-      players: [
-        { playerId: 'player1', hp: 100, attack: 10, defense: 5, speed: 7, specialAbility: 'None', isBot: false, createdAt: new Date(), updatedAt: new Date() },
-        { playerId: 'player2', hp: 100, attack: 10, defense: 5, speed: 7, specialAbility: 'None', isBot: true, createdAt: new Date(), updatedAt: new Date() }
-      ],
       isBattleActive: true,
     };
     const newState = service.switchTurn(battleState);

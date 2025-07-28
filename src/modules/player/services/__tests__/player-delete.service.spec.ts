@@ -27,7 +27,7 @@ describe('PlayerDeleteService', () => {
 
   it('deve deletar um jogador com sucesso', async () => {
     const id = 1;
-    const player = { id, username: 'testuser', createdAt: new Date(), updatedAt: new Date() };
+    const player = { id, username: 'testuser', wins:0, losses:0, createdAt: new Date(), updatedAt: new Date() };
 
     jest.spyOn(repository, 'findById').mockResolvedValue(player);
     jest.spyOn(repository, 'delete').mockResolvedValue(undefined);
