@@ -9,7 +9,8 @@ import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: ['https://test-dnc-api-battle-front.vercel.app'],
+    credentials: true,
   },
 })
 export class BattleGateway {
