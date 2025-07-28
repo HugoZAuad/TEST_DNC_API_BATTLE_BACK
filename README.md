@@ -43,6 +43,11 @@ Principais boas práticas aplicadas:
 - PostgreSQL instalado e configurado
 - Variável de ambiente `DATABASE_URL` configurada com a string de conexão do banco
 
+### Banco de Dados
+
+O banco de dados PostgreSQL utilizado neste projeto está hospedado no [Supabase](https://supabase.com/), uma plataforma moderna para bancos gerenciados na nuvem.
+Para acessar, configurar ou alterar o banco, utilize o painel do Supabase e atualize a variável de ambiente `DATABASE_URL` conforme necessário.
+
 ### Passos para executar
 
 1. Clone o repositório:
