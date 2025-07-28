@@ -18,14 +18,6 @@ export class PlayerRepository {
   async findById(id: number): Promise<Player | null> {
     return this.prisma.player.findUnique({
       where: { id },
-      select: {
-        id: true,
-        username: true,
-        wins: true,
-        losses: true,
-        createdAt: true,
-        updatedAt: true,
-      },
     });
   }
 
@@ -65,16 +57,19 @@ export class PlayerRepository {
   }
 
   async updateStats(id: number, stats: { wins?: number; losses?: number }): Promise<void> {
-    const player = await this.findById(id);
-    if (!player) {
-      throw new NotFoundException('Jogador não encontrado');
-    }
-
     await this.prisma.player.update({
-      where: { id },
+      where: { id: Number(id) },
       data: {
-        wins: (player.wins ?? 0) + (stats.wins ?? 0),
-        losses: (player.losses ?? 0) + (stats.losses ?? 0),
+        ...(stats.wins !== undefined && {
+          wins: {
+            increment: stats.wins
+          }
+        }),
+        ...(stats.losses !== undefined && {
+          losses: {
+            increment: stats.losses
+          }
+        }),
       },
     });
   }

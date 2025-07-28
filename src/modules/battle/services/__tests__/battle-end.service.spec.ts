@@ -33,10 +33,10 @@ describe('BattleEndService', () => {
   });
 
   it('deve encerrar a batalha e atualizar estatísticas', async () => {
-    await service.handleBattleEnd('player1', 'player2');
+    await service.handleBattleEnd('1', '2');
 
-    expect(mockBattleRepository.endBattle).toHaveBeenCalledWith('player1', 'player2');
-    expect(mockPlayerRepository.updateStats).toHaveBeenCalledWith('player1', { wins: 1 });
-    expect(mockPlayerRepository.updateStats).toHaveBeenCalledWith('player2', { losses: 1 });
+    expect(mockBattleRepository.endBattle).toHaveBeenCalledWith('1', '2');
+    expect(mockPlayerRepository.updateStats).toHaveBeenCalledWith(1, { wins: 1 });
+    expect(mockPlayerRepository.updateStats).toHaveBeenCalledWith(2, { losses: 1 });
   });
 });
