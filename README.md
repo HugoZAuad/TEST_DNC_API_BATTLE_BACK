@@ -2,34 +2,36 @@
 
 ## Visão Geral
 
-Esta API permite batalhas online entre monstros, onde jogadores podem criar seus personagens, escolher monstros e participar de batalhas em arenas. O sistema gerencia a criação, atualização e exclusão de jogadores e monstros, além de organizar as batalhas em tempo real, proporcionando uma experiência dinâmica e interativa.
+Esta API foi desenvolvida para proporcionar uma experiência dinâmica de batalhas online entre monstros, onde jogadores podem criar seus perfis, escolher monstros e participar de combates em arenas virtuais. O sistema gerencia todo o ciclo de vida dos jogadores, monstros e batalhas, garantindo comunicação em tempo real e integridade dos dados.
 
 ---
 
 ## Tecnologias Utilizadas
 
-- **Node.js**: Ambiente de execução JavaScript no servidor, garantindo alta performance e escalabilidade.
-- **NestJS**: Framework moderno para construção de aplicações escaláveis e organizadas, utilizando TypeScript.
-- **PostgreSQL**: Banco de dados relacional robusto para armazenamento seguro e eficiente dos dados.
-- **Prisma ORM**: Ferramenta para modelagem e acesso ao banco de dados, facilitando operações e garantindo segurança.
-- **WebSockets**: Comunicação em tempo real para atualização instantânea das batalhas entre jogadores.
-- **Jest**: Framework para testes unitários e de integração, assegurando a qualidade do código.
-- **Supertest**: Biblioteca para testes de APIs HTTP, garantindo o correto funcionamento dos endpoints.
+- **Node.js**: Plataforma para execução do código JavaScript no servidor, garantindo desempenho e escalabilidade.
+- **NestJS**: Framework progressivo para Node.js que facilita a construção de aplicações modulares e testáveis com TypeScript.
+- **PostgreSQL**: Banco de dados relacional utilizado para armazenar informações persistentes de jogadores, monstros e batalhas.
+- **Prisma ORM**: Ferramenta para modelagem e manipulação do banco de dados, simplificando consultas e migrações.
+- **Socket.IO (WebSockets)**: Comunicação bidirecional em tempo real entre cliente e servidor para atualização instantânea das batalhas.
+- **Jest**: Framework para testes unitários e de integração, assegurando a qualidade e estabilidade do código.
+- **Supertest**: Biblioteca para testes de endpoints HTTP, garantindo o funcionamento correto da API.
+- **class-validator**: Validação rigorosa dos dados recebidos nas requisições para garantir segurança e consistência.
 
 ---
 
-## Arquitetura
+## Arquitetura e Boas Práticas
 
-A aplicação é estruturada em uma arquitetura modular monolítica, onde cada módulo é responsável por uma funcionalidade específica, como jogadores, monstros e batalhas. Essa organização facilita a manutenção, escalabilidade e colaboração entre equipes.
+A aplicação segue uma arquitetura modular, onde cada módulo é responsável por uma funcionalidade específica, como jogadores, monstros, arenas e batalhas. Essa organização facilita a manutenção, escalabilidade e colaboração entre equipes.
 
-### Princípios e Boas Práticas
+Principais boas práticas aplicadas:
 
-- **Modularização**: Código organizado em módulos independentes para melhor organização e escalabilidade.
-- **Princípios SOLID**: Garantia de responsabilidade única, extensibilidade e fácil manutenção do código.
-- **Injeção de Dependências**: Uso do sistema do NestJS para desacoplar componentes e facilitar testes.
+- **Modularização**: Separação clara de responsabilidades em módulos independentes.
+- **Princípios SOLID**: Código estruturado para garantir responsabilidade única, extensibilidade e fácil manutenção.
+- **Injeção de Dependências**: Uso do NestJS para desacoplamento e facilidade nos testes.
 - **Validação e Tratamento de Erros**: Implementação de pipes e middlewares para garantir dados válidos e tratamento adequado de exceções.
 - **Testes Automatizados**: Cobertura abrangente com testes unitários e de integração para evitar regressões.
-- **DTOs (Data Transfer Objects)**: Validação e tipagem rigorosa dos dados trafegados nas rotas, aumentando a segurança.
+- **DTOs (Data Transfer Objects)**: Uso de objetos de transferência para validação e tipagem dos dados trafegados.
+- **Comunicação em tempo real via WebSockets**: Eventos para registro de jogadores, início de batalhas e ataques.
 
 ---
 
@@ -41,7 +43,7 @@ A aplicação é estruturada em uma arquitetura modular monolítica, onde cada m
 - PostgreSQL instalado e configurado
 - Variável de ambiente `DATABASE_URL` configurada com a string de conexão do banco
 
-### Passos para rodar
+### Passos para executar
 
 1. Clone o repositório:
    ```bash
@@ -61,38 +63,144 @@ A aplicação é estruturada em uma arquitetura modular monolítica, onde cada m
    npx prisma migrate deploy
    ```
 
-5. Inicie a aplicação:
+5. Inicie a aplicação em modo de desenvolvimento:
    ```bash
    npm run start:dev
    ```
 
 ---
 
-## Uso da API
+## Endpoints da API
 
 ### Jogadores (Players)
 
-- `POST /players`: Cria um novo jogador.
-  - Body: `{ "name": "nomeDoJogador" }`
-- `PATCH /players/:id`: Atualiza o nome do jogador.
-  - Body: `{ "name": "novoNome" }`
-- `DELETE /players/:id`: Remove um jogador.
+- **POST /players**: Cria um novo jogador.
+  - Body:
+    ```json
+    {
+      "name": "nomeDoJogador",
+      "wins": 0,
+      "losses": 0
+    }
+    ```
+- **GET /players**: Lista todos os jogadores.
+- **GET /players/:id**: Retorna um jogador pelo ID.
+- **GET /players/name/:username**: Retorna um jogador pelo nome de usuário.
+- **PATCH /players/:id**: Atualiza o nome do jogador.
+  - Body:
+    ```json
+    {
+      "name": "novoNome"
+    }
+    ```
+- **DELETE /players/:id**: Remove um jogador.
+
+---
 
 ### Monstros (Monsters)
 
-- `GET /monsters`: Lista todos os monstros.
-- `GET /monsters/:id`: Retorna um monstro pelo ID.
-- `POST /monsters`: Cria um novo monstro.
-  - Body: `{ "name": "nomeDoMonstro", "power": valor, ... }`
-- `PATCH /monsters/:id`: Atualiza o nome do monstro.
-  - Body: `{ "name": "novoNome" }`
-- `DELETE /monsters/:id`: Remove um monstro.
+- **POST /monsters**: Cria um novo monstro.
+  - Body:
+    ```json
+    {
+      "name": "nomeDoMonstro",
+      "hp": 100,
+      "attack": 10,
+      "defense": 5,
+      "speed": 7,
+      "specialAbility": "habilidadeEspecial"
+    }
+    ```
+- **GET /monsters**: Lista todos os monstros.
+- **GET /monsters/:id**: Retorna um monstro pelo ID.
+- **GET /monsters/name/:name**: Retorna um monstro pelo nome.
+- **PATCH /monsters/:id**: Atualiza o nome do monstro.
+  - Body:
+    ```json
+    {
+      "name": "novoNome"
+    }
+    ```
+- **DELETE /monsters/:id**: Remove um monstro.
 
-### Arenas e Batalhas
+---
 
-- `POST /arenas`: Cria uma nova arena para batalhas.
-- `POST /arenas/:id/join`: Jogador entra na arena.
-- As batalhas são organizadas automaticamente após 1 minuto de abertura da arena, com jogadores pareados para batalhas ou enfrentando bots se necessário.
+### Arenas
+
+- **POST /arenas**: Cria uma nova arena para batalhas.
+  - Body:
+    ```json
+    {
+      "name": "nomeDaArena",
+      "max_players": 10
+    }
+    ```
+- **POST /arenas/:id/action**: Envia uma ação do jogador na arena.
+  - Body:
+    ```json
+    {
+      "player_id": 1,
+      "action": "açãoDoJogador"
+    }
+    ```
+- **POST /arenas/:id/join**: Jogador entra na arena.
+  - Body:
+    ```json
+    {
+      "player_id": 1,
+      "monster_id": 2
+    }
+    ```
+- **POST /arenas/:id/leave**: Jogador sai da arena.
+  - Body:
+    ```json
+    {
+      "player_id": 1
+    }
+    ```
+- **POST /arenas/:id/start**: Inicia a batalha na arena. (Sem body)
+- **POST /arenas/:id/end**: Encerra a batalha na arena.
+  - Body:
+    ```json
+    {
+      "winner": {
+        "player_id": 1,
+        "monster": "nomeDoMonstroVencedor"
+      }
+    }
+    ```
+
+---
+
+## Eventos WebSocket (Batalhas)
+
+- **Evento: `registerPlayer`**
+  - Payload:
+    ```json
+    {
+      "playerId": "idDoJogador"
+    }
+    ```
+  - Descrição: Registra o socket do jogador para comunicação em tempo real.
+
+- **Evento: `handleStartBattle`**
+  - Payload:
+    ```json
+    {
+      "playerId": 1
+    }
+    ```
+  - Descrição: Inicia a batalha para o jogador.
+
+- **Evento: `handleAttack`**
+  - Payload:
+    ```json
+    {
+      "playerId": "idDoJogador",
+      "targetId": "idDoAlvo"
+    }
+    ```
+  - Descrição: Envia um ataque do jogador para o alvo.
 
 ---
 
