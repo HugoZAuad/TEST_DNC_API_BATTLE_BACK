@@ -64,10 +64,10 @@ export class ArenaStateService {
       const socket2 = this.battleGateway.getSocketByPlayerId(player2.player_id.toString());
 
       if (socket1) {
-        this.battleGateway.handleStartBattle({ playerId: player1.player_id }, socket1);
+        this.battleGateway.handleStartBattle(socket1, { playerId: player1.player_id });
       }
       if (socket2) {
-        this.battleGateway.handleStartBattle({ playerId: player2.player_id }, socket2);
+        this.battleGateway.handleStartBattle(socket2, { playerId: player2.player_id });
       }
 
       console.log(`Starting battle between ${player1.player_id} and ${player2.player_id} in arena ${arenaId}`);
@@ -97,10 +97,10 @@ export class ArenaStateService {
     console.log(`Iniciando batalha do player ${player.player_id} contra o bot na arena ${arenaId}.`);
 
     // Envia o evento de início de batalha para o front-end do player
-    this.battleGateway.handleStartBattle(
-      { playerId: player.player_id, opponent: bot, isBot: true, arenaId },
-      socket,
-    );
+      this.battleGateway.handleStartBattle(
+        socket,
+        { playerId: player.player_id, opponent: bot, isBot: true, arenaId },
+      );
 
     // Simula o ataque do bot após 2 segundos
     setTimeout(() => {
@@ -109,6 +109,6 @@ export class ArenaStateService {
         { playerId: bot.player_id, targetId: player.player_id, isBot: true, arenaId },
         socket,
       );
-    }, 2000);
+    }, 5000);
   }
 }
