@@ -17,7 +17,7 @@ import { CreateArenaDto } from '../interfaces/dto/create-arena.dto';
 @WebSocketGateway({
   namespace: '/arena',
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'https://test-dnc-api-battle-front.vercel.app'],
+    origin: process.env.CORS_ORIGINS,
     credentials: true,
   },
 })

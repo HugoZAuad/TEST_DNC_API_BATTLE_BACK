@@ -1,76 +1,53 @@
 import {
   WebSocketGateway,
-  WebSocketServer,
   SubscribeMessage,
-  MessageBody,
-  ConnectedSocket,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'https://test-dnc-api-battle-front.vercel.app'],
+    origin: process.env.CORS_ORIGINS,
     credentials: true,
   },
 })
-export class BattleGateway {
+export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  private playerSockets: Map<string, Socket> = new Map();
-
-  registerSocket(playerId: string, socket: Socket) {
-    this.playerSockets.set(playerId, socket);
+  handleConnection(client: Socket) {
+    console.log('Socket conectado:', client.id);
   }
 
-  unregisterSocket(playerId: string) {
-    this.playerSockets.delete(playerId);
+  handleDisconnect(client: Socket) {
+    console.log('Socket desconectado:', client.id);
   }
 
-  getSocketByPlayerId(playerId: string): Socket | undefined {
-    return this.playerSockets.get(playerId);
+  @SubscribeMessage('playerAvailable')
+  handlePlayerAvailable(client: Socket, data: any) {
+    console.log('Evento playerAvailable recebido:', data, 'Socket:', client.id);
+    client.emit('availableConfirmed');
   }
 
-  sendErrorMessage(socket: Socket, message: string, code?: number) {
-    socket.emit('errorMessage', {
-      type: 'error',
-      message,
-      code: code ?? 500,
+  @SubscribeMessage('startBattle')
+  handleStartBattle(client: Socket, data: any) {
+    console.log('Evento startBattle recebido:', data, 'Socket:', client.id);
+    // Exemplo de resposta, ajuste conforme sua lógica:
+    client.emit('battleStarted', {
+      battleState: {
+        /* ...dados da batalha... */
+      },
     });
   }
 
-  sendMessage(socket: Socket, event: string, payload: any) {
-    socket.emit(event, payload);
-  }
-
-  handleConnection(socket: Socket) {
-    console.log(`Socket conectado: ${socket.id}`);
-  }
-
-  handleDisconnect(socket: Socket) {
-    console.log(`Socket desconectado: ${socket.id}`);
-    for (const [playerId, s] of this.playerSockets.entries()) {
-      if (s.id === socket.id) {
-        this.unregisterSocket(playerId);
-        break;
-      }
-    }
-  }
-
-  @SubscribeMessage('registerPlayer')
-  handleRegisterPlayer(
-    @MessageBody() data: { playerId: string },
-    @ConnectedSocket() socket: Socket,
-  ) {
-    this.registerSocket(data.playerId, socket);
-    socket.emit('playerRegistered', { success: true });
-  }
-
-  async handleStartBattle(data: { playerId: number }, socket: Socket) {
-    socket.emit('battleStarted', { playerId: data.playerId });
-  }
-
-  async handleAttack(data: { playerId: string; targetId: string }, socket: Socket) {
-    socket.emit('attack', data);
+  @SubscribeMessage('battleAction')
+  handleBattleAction(client: Socket, data: any) {
+    console.log('Evento battleAction recebido:', data, 'Socket:', client.id);
+    // Exemplo de resposta, ajuste conforme sua lógica:
+    client.emit('battleUpdate', {
+      /* ...dados atualizados da batalha... */
+    });
   }
 }

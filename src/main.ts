@@ -8,11 +8,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
-      const allowedOrigins = [
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'https://test-dnc-api-battle-front.vercel.app',
-      ];
+      const allowedOrigins = process.env.CORS_ORIGINS?.split(',') ?? [];
 
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
