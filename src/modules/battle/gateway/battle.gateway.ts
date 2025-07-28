@@ -94,13 +94,20 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
-  public async handleStartBattle(data: any, client: Socket) {
+  @SubscribeMessage('startBattle')
+  public async handleStartBattle(client: Socket, data: any) {
     console.log(
-      'handleStartBattle chamado via serviço:',
+      'Evento startBattle recebido:',
       data,
       'Socket:',
       client.id
     );
-    client.emit('battleStarted', { battleState: data });
+    const battleId = data.battleId;
+    if (battleId) {
+      this.server.to(battleId).emit('battleStarted', { battleState: data });
+      console.log(`Evento battleStarted emitido para a sala ${battleId}`);
+    } else {
+      client.emit('error', { message: 'battleId is required to start battle' });
+    }
   }
 }
