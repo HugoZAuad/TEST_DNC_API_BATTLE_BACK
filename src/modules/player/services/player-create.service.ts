@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PlayerRepository } from '../repositories/player.repository';
 import { Player } from '@prisma/client';
-import { CreatePlayerDto } from '../interfaces/dto/create-player.dto'; // Ajuste o caminho conforme necessário
+import { CreatePlayerDto } from '../interfaces/dto/create-player.dto';
 
 @Injectable()
 export class PlayerCreateService {
