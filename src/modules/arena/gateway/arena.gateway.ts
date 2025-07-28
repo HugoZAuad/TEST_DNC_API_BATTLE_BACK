@@ -4,7 +4,7 @@ import {
   MessageBody,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { ArenaCreationService } from '../services/arena-creation.service';
 import { ArenaJoinService } from '../services/arena-join.service';
 import { ArenaLeaveService } from '../services/arena-leave.service';
@@ -52,13 +52,15 @@ export class ArenaGateway {
       arenaId: string;
       player_id: number;
       monster_id: number;
-    }
+    },
+    client: Socket
   ) {
     const result = this.arenaJoinService.joinArena(data.arenaId, {
       player_id: data.player_id,
       monster_id: data.monster_id,
     });
-    this.server.emit('playerJoined', result);
+    client.join(data.arenaId);
+    this.server.to(data.arenaId).emit('playerJoined', result);
     return result;
   }
 
@@ -74,7 +76,7 @@ export class ArenaGateway {
   @SubscribeMessage('startBattle')
   startBattle(@MessageBody() data: { arenaId: string }) {
     const result = this.arenaStartService.startBattle(data.arenaId);
-    this.server.emit('battleStarted', result);
+    this.server.to(data.arenaId).emit('battleStarted', result);
     return result;
   }
 
