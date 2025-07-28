@@ -56,19 +56,22 @@ export class PlayerRepository {
     });
   }
 
-  async updateStats(id: number, stats: { wins?: number; losses?: number }): Promise<void> {
+  async updateStats(
+    id: number,
+    stats: { wins?: number; losses?: number }
+  ): Promise<void> {
     await this.prisma.player.update({
       where: { id: Number(id) },
       data: {
         ...(stats.wins !== undefined && {
           wins: {
-            increment: stats.wins
-          }
+            increment: stats.wins,
+          },
         }),
         ...(stats.losses !== undefined && {
           losses: {
-            increment: stats.losses
-          }
+            increment: stats.losses,
+          },
         }),
       },
     });
