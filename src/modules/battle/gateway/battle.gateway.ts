@@ -11,6 +11,7 @@ import { Server, Socket } from 'socket.io';
   cors: {
     origin: [
       'http://localhost:5173',
+      'http://localhost:5174',
       'https://test-dnc-api-battle-front.vercel.app',
     ],
     credentials: true,
@@ -49,13 +50,11 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   public async handleAttack(data: any, client: Socket) {
     console.log('handleAttack chamado via serviço:', data, 'Socket:', client.id);
-    // ...lógica de ataque...
     client.emit('battleUpdate', { /* ...dados atualizados da batalha... */ });
   }
 
   public async handleStartBattle(data: any, client: Socket) {
     console.log('handleStartBattle chamado via serviço:', data, 'Socket:', client.id);
-    // ...lógica de início de batalha...
-    client.emit('battleStarted', { battleState: { /* ...dados da batalha... */ } });
+    client.emit('battleStarted', { battleState: data });
   }
 }

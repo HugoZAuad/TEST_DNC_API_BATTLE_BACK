@@ -81,8 +81,34 @@ export class ArenaStateService {
 
       const socket = this.battleGateway.getSocketByPlayerId(lastPlayer.player_id.toString());
       if (socket) {
-        this.battleGateway.handleStartBattle({ playerId: lastPlayer.player_id }, socket);
+        await this.startBattleVsBot(lastPlayer, socket, arenaId);
       }
     }
+  }
+
+  private async startBattleVsBot(player: any, socket: any, arenaId: string) {
+    // Cria um bot fictício
+    const bot = {
+      player_id: 'BOT',
+      username: 'Bot',
+      // outros atributos do bot...
+    };
+
+    console.log(`Iniciando batalha do player ${player.player_id} contra o bot na arena ${arenaId}.`);
+
+    // Envia o evento de início de batalha para o front-end do player
+    this.battleGateway.handleStartBattle(
+      { playerId: player.player_id, opponent: bot, isBot: true, arenaId },
+      socket,
+    );
+
+    // Simula o ataque do bot após 2 segundos
+    setTimeout(() => {
+      console.log(`Bot atacando o player ${player.player_id} na arena ${arenaId}`);
+      this.battleGateway.handleAttack(
+        { playerId: bot.player_id, targetId: player.player_id, isBot: true, arenaId },
+        socket,
+      );
+    }, 2000);
   }
 }
