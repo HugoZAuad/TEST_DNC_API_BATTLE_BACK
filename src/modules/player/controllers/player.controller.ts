@@ -55,7 +55,7 @@ export class PlayerController {
   ): Promise<any> {
     return await this.playerUpdateService.updatePlayer(
       id,
-      updatePlayerDto.name
+      updatePlayerDto.username
     );
   }
 

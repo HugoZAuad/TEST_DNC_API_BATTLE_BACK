@@ -8,12 +8,12 @@ export class PlayerCreateService {
   constructor(private readonly playerRepository: PlayerRepository) {}
 
   async createPlayer(createPlayerDto: CreatePlayerDto): Promise<Player> {
-    const { name, wins = 0, losses = 0 } = createPlayerDto;
+    const { username, wins = 0, losses = 0 } = createPlayerDto;
 
-    if (!name || name.trim() === '') {
+    if (!username || username.trim() === '') {
       throw new BadRequestException('Informe o nome do jogador');
     }
 
-    return this.playerRepository.create(name, wins, losses);
+    return this.playerRepository.create(username, wins, losses);
   }
 }

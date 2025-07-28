@@ -8,7 +8,7 @@ export class PlayerRepository {
   async create(name: string, wins = 0, losses = 0): Promise<Player> {
     return this.prisma.player.create({
       data: {
-        name,
+        username: name,
         wins,
         losses,
       },
@@ -23,7 +23,7 @@ export class PlayerRepository {
 
   async findByName(name: string): Promise<Player | null> {
     return this.prisma.player.findFirst({
-      where: { name },
+      where: { username: name },
     });
   }
 
