@@ -49,12 +49,24 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   public async handleAttack(data: any, client: Socket) {
-    console.log('handleAttack chamado via serviço:', data, 'Socket:', client.id);
-    client.emit('battleUpdate', { /* ...dados atualizados da batalha... */ });
+    console.log(
+      'handleAttack chamado via serviço:',
+      data,
+      'Socket:',
+      client.id
+    );
+    client.emit('battleUpdate', {
+      /* ...dados atualizados da batalha... */
+    });
   }
 
   public async handleStartBattle(data: any, client: Socket) {
-    console.log('handleStartBattle chamado via serviço:', data, 'Socket:', client.id);
+    console.log(
+      'handleStartBattle chamado via serviço:',
+      data,
+      'Socket:',
+      client.id
+    );
     client.emit('battleStarted', { battleState: data });
   }
 }

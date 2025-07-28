@@ -29,7 +29,7 @@ export class ArenaGateway {
     private readonly arenaStartService: ArenaStartService,
     private readonly arenaEndService: ArenaEndService,
     private readonly arenaActionService: ArenaActionService,
-    private readonly arenaStateService: ArenaStateService,
+    private readonly arenaStateService: ArenaStateService
   ) {}
 
   @WebSocketServer()
@@ -46,7 +46,14 @@ export class ArenaGateway {
   }
 
   @SubscribeMessage('joinArena')
-  joinArena(@MessageBody() data: { arenaId: string; player_id: number; monster_id: number }) {
+  joinArena(
+    @MessageBody()
+    data: {
+      arenaId: string;
+      player_id: number;
+      monster_id: number;
+    }
+  ) {
     const result = this.arenaJoinService.joinArena(data.arenaId, {
       player_id: data.player_id,
       monster_id: data.monster_id,
@@ -72,14 +79,28 @@ export class ArenaGateway {
   }
 
   @SubscribeMessage('endBattle')
-  endBattle(@MessageBody() data: { arenaId: string; winner: { player_id: number; monster: string } }) {
+  endBattle(
+    @MessageBody()
+    data: {
+      arenaId: string;
+      winner: { player_id: number; monster: string };
+    }
+  ) {
     const result = this.arenaEndService.endBattle(data.arenaId, data);
     this.server.emit('battleEnded', result);
     return result;
   }
 
   @SubscribeMessage('playerAction')
-  playerAction(@MessageBody() data: { arenaId: string; player_id: number; action: string; target_id?: string }) {
+  playerAction(
+    @MessageBody()
+    data: {
+      arenaId: string;
+      player_id: number;
+      action: string;
+      target_id?: string;
+    }
+  ) {
     return this.arenaActionService.playerAction(data.arenaId, {
       player_id: data.player_id,
       action: data.action,
