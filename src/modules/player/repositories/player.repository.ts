@@ -5,11 +5,11 @@ import { PrismaClient, Player } from '@prisma/client';
 export class PlayerRepository {
   private readonly prisma = new PrismaClient();
 
-  async create(name: string, wins = 0, losses = 0): Promise<Player> {
+  async create(name: string, winners = 0, losses = 0): Promise<Player> {
     return this.prisma.player.create({
       data: {
         username: name,
-        wins,
+        winners,
         losses,
       },
     });
@@ -58,14 +58,14 @@ export class PlayerRepository {
 
   async updateStats(
     id: number,
-    stats: { wins?: number; losses?: number }
+    stats: { winners?: number; losses?: number }
   ): Promise<void> {
     await this.prisma.player.update({
       where: { id: Number(id) },
       data: {
-        ...(stats.wins !== undefined && {
-          wins: {
-            increment: stats.wins,
+        ...(stats.winners !== undefined && {
+          winners: {
+            increment: stats.winners,
           },
         }),
         ...(stats.losses !== undefined && {

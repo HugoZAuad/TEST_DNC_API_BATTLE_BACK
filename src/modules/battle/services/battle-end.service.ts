@@ -17,7 +17,7 @@ export class BattleEndService {
 
     await this.battleRepository.endBattle(winnerId, loserId);
 
-    await this.playerRepository.updateStats(Number(winnerId), { wins: 1 });
+    await this.playerRepository.updateStats(Number(winnerId), { winners: 1 });
 
     await this.playerRepository.updateStats(Number(loserId), { losses: 1 });
 

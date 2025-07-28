@@ -7,7 +7,7 @@ export class CreatePlayerDto {
 
   @IsOptional()
   @IsNumber()
-  wins?: number;
+  winners?: number;
 
   @IsOptional()
   @IsNumber()

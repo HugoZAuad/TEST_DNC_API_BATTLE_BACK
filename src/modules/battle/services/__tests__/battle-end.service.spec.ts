@@ -36,7 +36,7 @@ describe('BattleEndService', () => {
     await service.handleBattleEnd('1', '2');
 
     expect(mockBattleRepository.endBattle).toHaveBeenCalledWith('1', '2');
-    expect(mockPlayerRepository.updateStats).toHaveBeenCalledWith(1, { wins: 1 });
+    expect(mockPlayerRepository.updateStats).toHaveBeenCalledWith(1, { winners: 1 });
     expect(mockPlayerRepository.updateStats).toHaveBeenCalledWith(2, { losses: 1 });
   });
 });

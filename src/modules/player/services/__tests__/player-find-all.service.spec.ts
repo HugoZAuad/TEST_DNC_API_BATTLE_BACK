@@ -28,7 +28,7 @@ describe('PlayerFindAllService', () => {
   });
 
   it('deve chamar repository.findAll e retornar o resultado', async () => {
-    const players = [{ id: 1, username: 'player1', wins:0, losses:0, createdAt: new Date(), updatedAt: new Date() }];
+    const players = [{ id: 1, username: 'player1', winners:0, losses:0, createdAt: new Date(), updatedAt: new Date() }];
     jest.spyOn(repository, 'findAll').mockResolvedValue(players);
 
     const result = await service.findAll();

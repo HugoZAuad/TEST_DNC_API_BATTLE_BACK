@@ -61,7 +61,7 @@ describe('PlayerController', () => {
   });
 
   it('deve chamar findAllService.findAll e retornar resultado', async () => {
-    const players = [{ id: 1, username: 'player1', wins:0, losses:0, createdAt: new Date(), updatedAt: new Date() }];
+    const players = [{ id: 1, username: 'player1', winners:0, losses:0, createdAt: new Date(), updatedAt: new Date() }];
     jest.spyOn(findAllService, 'findAll').mockResolvedValue(players);
 
     const result = await controller.findAll();
@@ -70,7 +70,7 @@ describe('PlayerController', () => {
   });
 
   it('deve chamar findByIdService.findById e retornar resultado', async () => {
-    const player = { id: 1, username: 'player1', wins:0, losses:0, createdAt: new Date(), updatedAt: new Date() };
+    const player = { id: 1, username: 'player1', winners:0, losses:0, createdAt: new Date(), updatedAt: new Date() };
     jest.spyOn(findByIdService, 'findById').mockResolvedValue(player);
 
     const result = await controller.findById(1);
@@ -79,7 +79,7 @@ describe('PlayerController', () => {
   });
 
   it('deve chamar findByNameService.findByName e retornar resultado', async () => {
-    const player = { id: 1, username: 'player1', wins:0, losses:0, createdAt: new Date(), updatedAt: new Date() };
+    const player = { id: 1, username: 'player1', winners:0, losses:0, createdAt: new Date(), updatedAt: new Date() };
     jest.spyOn(findByNameService, 'findByName').mockResolvedValue(player);
 
     const result = await controller.findByName('player1');
@@ -88,19 +88,19 @@ describe('PlayerController', () => {
   });
 
   it('deve chamar playerCreateService.createPlayer e retornar resultado', async () => {
-    const createdPlayer = { id: 1, username: 'newPlayer', wins:0, losses:0, createdAt: new Date(), updatedAt: new Date() };
+    const createdPlayer = { id: 1, username: 'newPlayer', winners:0, losses:0, createdAt: new Date(), updatedAt: new Date() };
     jest.spyOn(createService, 'createPlayer').mockResolvedValue(createdPlayer);
 
-    const result = await controller.createPlayer({ name: 'newPlayer' });
+    const result = await controller.createPlayer({ username: 'newPlayer' });
     expect(createService.createPlayer).toHaveBeenCalledWith('newPlayer');
     expect(result).toEqual(createdPlayer);
   });
 
   it('deve chamar playerUpdateService.updatePlayer e retornar resultado', async () => {
-    const updatedPlayer = { id: 1, username: 'playerUpdated', wins:0, losses:0, createdAt: new Date(), updatedAt: new Date() };
+    const updatedPlayer = { id: 1, username: 'playerUpdated', winners:0, losses:0, createdAt: new Date(), updatedAt: new Date() };
     jest.spyOn(updateService, 'updatePlayer').mockResolvedValue(updatedPlayer);
 
-    const result = await controller.updatePlayer(1, { name: 'playerUpdated' });
+    const result = await controller.updatePlayer(1, { username: 'playerUpdated' });
     expect(updateService.updatePlayer).toHaveBeenCalledWith(1, 'playerUpdated');
     expect(result).toEqual(updatedPlayer);
   });

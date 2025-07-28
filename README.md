@@ -79,7 +79,7 @@ Principais boas práticas aplicadas:
     ```json
     {
       "name": "nomeDoJogador",
-      "wins": 0,
+      "winners": 0,
       "losses": 0
     }
     ```
