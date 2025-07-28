@@ -3,30 +3,36 @@ import { PrismaClient, Player } from '@prisma/client';
 
 @Injectable()
 export class PlayerRepository {
-  private prisma = new PrismaClient();
+  private readonly prisma = new PrismaClient();
 
-  async create(username: string, wins: number = 0, losses: number = 0): Promise<Player> {
+  async create(username: string, wins = 0, losses = 0): Promise<Player> {
     return this.prisma.player.create({
       data: {
         username,
+        wins,
+        losses,
       },
     });
   }
 
   async findById(id: number): Promise<Player | null> {
-    return this.prisma.player.findUnique({ where: { id },
-    select: {
-    id: true,
-    username: true,
-    wins: true,
-    losses: true,
-    createdAt: true,
-    updatedAt: true,
-  }, });
+    return this.prisma.player.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        username: true,
+        wins: true,
+        losses: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
   }
 
   async findByName(username: string): Promise<Player | null> {
-    return this.prisma.player.findFirst({ where: { username } });
+    return this.prisma.player.findFirst({
+      where: { username },
+    });
   }
 
   async findAll(): Promise<Player[]> {
@@ -38,10 +44,11 @@ export class PlayerRepository {
     if (!player) {
       throw new NotFoundException('Jogador não encontrado');
     }
+
     return this.prisma.player.update({
       where: { id },
       data: {
-        ...(username !== undefined && { username }),
+        ...(username && { username }),
       },
     });
   }
@@ -51,18 +58,20 @@ export class PlayerRepository {
     if (!player) {
       throw new NotFoundException('Jogador não encontrado');
     }
-    await this.prisma.player.delete({ where: { id } });
+
+    await this.prisma.player.delete({
+      where: { id },
+    });
   }
 
-  async updateStats(id: string, stats: { wins?: number; losses?: number }): Promise<void> {
-    const playerId = parseInt(id);
-    const player = await this.findById(playerId);
+  async updateStats(id: number, stats: { wins?: number; losses?: number }): Promise<void> {
+    const player = await this.findById(id);
     if (!player) {
       throw new NotFoundException('Jogador não encontrado');
     }
 
     await this.prisma.player.update({
-      where: { id: playerId },
+      where: { id },
       data: {
         wins: (player.wins ?? 0) + (stats.wins ?? 0),
         losses: (player.losses ?? 0) + (stats.losses ?? 0),
