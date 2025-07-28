@@ -25,12 +25,12 @@ export class PlayerController {
     private readonly playerDeleteService: PlayerDeleteService,
     private readonly playerFindAllService: PlayerFindAllService,
     private readonly playerFindByIdService: PlayerFindByIdService,
-    private readonly playerFindByNameService: PlayerFindByNameService,
+    private readonly playerFindByNameService: PlayerFindByNameService
   ) {}
 
   @Post()
   async createPlayer(@Body() createPlayerDto: CreatePlayerDto): Promise<any> {
-    return await this.playerCreateService.createPlayer(createPlayerDto.name);
+    return await this.playerCreateService.createPlayer(createPlayerDto);
   }
 
   @Get()
@@ -51,11 +51,11 @@ export class PlayerController {
   @Patch(':id')
   async updatePlayer(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updatePlayerDto: UpdatePlayerDto,
+    @Body() updatePlayerDto: UpdatePlayerDto
   ): Promise<any> {
     return await this.playerUpdateService.updatePlayer(
       id,
-      updatePlayerDto.name,
+      updatePlayerDto.name
     );
   }
 
