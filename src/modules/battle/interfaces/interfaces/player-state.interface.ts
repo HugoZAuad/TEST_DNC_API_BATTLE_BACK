@@ -1,5 +1,6 @@
 export interface PlayerState {
   playerId: string;
+  username: string;
   hp: number;
   attack: number;
   defense: number;

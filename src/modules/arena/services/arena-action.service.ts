@@ -1,45 +1,112 @@
 import { Injectable } from '@nestjs/common';
 import { ArenaCreationService } from './arena-creation.service';
 import { BattleGateway } from '../../battle/gateway/battle.gateway';
+import { BattleTurnService } from '../../battle/services/battle-turn.service';
+import { ArenaEndService } from './arena-end.service';
+import { ArenaDto } from '../interfaces/dto/arena.dto';
+import { BattleState } from '../../battle/interfaces/interfaces/battle-state.interface';
+import { PlayerState } from '../../battle/interfaces/interfaces/player-state.interface';
+import { MonsterState } from '../../battle/interfaces/interfaces/monster-state.interface';
 
 @Injectable()
 export class ArenaActionService {
   constructor(
     private readonly arenaCreationService: ArenaCreationService,
     private readonly battleGateway: BattleGateway,
+    private readonly turnService: BattleTurnService,
+    private readonly arenaEndService: ArenaEndService
   ) {}
 
-  async playerAction(arenaId: string, data: { player_id: number; action: string; target_id?: string }) {
-    const arena = this.arenaCreationService.getArena(arenaId);
-    if (!arena) {
-      return { error: 'Arena não encontrada' };
+  async playerAction(
+    arenaId: string,
+    data: { player_id: number; action: string; target_id?: number }
+  ) {
+    const arena: ArenaDto | undefined = this.arenaCreationService.getArena(arenaId);
+    if (!arena || !arena.battleState) {
+      return { error: 'Arena ou estado de batalha não encontrado' };
     }
+
+    const battle: BattleState = arena.battleState;
+    const playerId = data.player_id.toString();
+    const targetId = data.target_id?.toString();
+
+    if (!this.turnService.isPlayerTurn(battle, playerId)) {
+      return { error: 'Não é o turno do jogador' };
+    }
+
+    const attacker: PlayerState | undefined = battle.players.find(p => p.playerId === playerId);
+    const defender: PlayerState | undefined = battle.players.find(p => p.playerId === targetId);
+
+    const attackerMonster: MonsterState | undefined = battle.monsters.find(m => m.playerId === playerId);
+    const defenderMonster: MonsterState | undefined = battle.monsters.find(m => m.playerId === targetId);
+
+    if (!attacker || !attackerMonster) {
+      return { error: 'Dados do atacante não encontrados' };
+    }
+
+    let log = '';
 
     switch (data.action) {
       case 'attack': {
-        const socket = this.battleGateway.getSocketByPlayerId(data.player_id.toString());
-        if (!socket) {
-          return { error: 'Socket do jogador não encontrado' };
+        if (!defender || !defenderMonster) {
+          return { error: 'Dados do defensor não encontrados' };
         }
-        await this.battleGateway.handleAttack(
-          { playerId: data.player_id.toString(), targetId: data.target_id! },
-          socket,
-        );
+        const damage = Math.max(attackerMonster.attack - defenderMonster.defense, 1);
+        defenderMonster.hp -= damage;
+        log = `${attacker.username} atacou ${defender.username} causando ${damage} de dano!`;
         break;
       }
-      case 'defend':
-        this.battleGateway.server.emit('defend', { playerId: data.player_id, arenaId });
+
+      case 'defend': {
+        attackerMonster.defense += 5;
+        log = `${attacker.username} aumentou sua defesa!`;
         break;
-      case 'special':
-        this.battleGateway.server.emit('special', { playerId: data.player_id, arenaId });
+      }
+
+      case 'special': {
+        attackerMonster.hp = Math.min(attackerMonster.hp + 20, attackerMonster.maxHp);
+        log = `${attacker.username} usou habilidade especial e se curou!`;
         break;
-      case 'forfeit':
-        this.battleGateway.server.emit('forfeit', { playerId: data.player_id, arenaId });
-        break;
+      }
+
+      case 'forfeit': {
+        if (!defender || !defenderMonster) {
+          return { error: 'Dados do defensor não encontrados para declarar vencedor' };
+        }
+        await this.arenaEndService.endBattle(arenaId, {
+          winner: { player_id: Number(targetId), monster: defenderMonster.name }
+        });
+        this.battleGateway.server.to(arenaId).emit('battleEnded', {
+          winner: defender.username,
+          reason: 'Desistência'
+        });
+        return { message: 'Jogador desistiu da batalha' };
+      }
+
       default:
         return { error: 'Ação inválida' };
     }
 
-    return { message: `Ação ${data.action} processada para jogador ${data.player_id} na arena ${arenaId}` };
+    this.battleGateway.server.to(arenaId).emit('battleTurnEnded', {
+      actions: [log],
+      currentPlayer: playerId
+    });
+
+    if (defenderMonster && defenderMonster.hp <= 0) {
+      await this.arenaEndService.endBattle(arenaId, {
+        winner: { player_id: Number(playerId), monster: attackerMonster.name }
+      });
+      this.battleGateway.server.to(arenaId).emit('battleEnded', {
+        winner: attacker.username,
+        reason: 'HP zerado'
+      });
+      return { message: 'Batalha encerrada' };
+    }
+
+    const updatedBattle = this.turnService.switchTurn(battle);
+
+    this.battleGateway.server.to(arenaId).emit('battleUpdate', updatedBattle);
+
+    return { message: `Ação ${data.action} executada com sucesso` };
   }
 }
