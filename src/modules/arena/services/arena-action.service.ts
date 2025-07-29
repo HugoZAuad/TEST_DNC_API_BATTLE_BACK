@@ -144,8 +144,8 @@ export class ArenaActionService {
       if (target) {
         const botLog = await this.botAIService.executeBotTurn(
           arenaId,
-          Number(nextPlayerId),
-          Number(target.playerId)
+          nextPlayerId.toString(),
+          target.playerId.toString()
         );
 
         this.battleGateway.server.to(arenaId).emit('battleTurnEnded', {
