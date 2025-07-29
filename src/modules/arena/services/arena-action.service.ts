@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { ArenaCreationService } from './arena-creation.service';
 import { BattleGateway } from '../../battle/gateway/battle.gateway';
 import { BattleTurnService } from '../../battle/services/battle-turn.service';
@@ -7,6 +7,7 @@ import { ArenaDto } from '../interfaces/dto/arena.dto';
 import { BattleState } from '../../battle/interfaces/interfaces/battle-state.interface';
 import { PlayerState } from '../../battle/interfaces/interfaces/player-state.interface';
 import { MonsterState } from '../../battle/interfaces/interfaces/monster-state.interface';
+import { BotAIService } from '../../battle/services/bot-ai.service'; // ✅ importado
 
 @Injectable()
 export class ArenaActionService {
@@ -14,7 +15,9 @@ export class ArenaActionService {
     private readonly arenaCreationService: ArenaCreationService,
     private readonly battleGateway: BattleGateway,
     private readonly turnService: BattleTurnService,
-    private readonly arenaEndService: ArenaEndService
+    private readonly arenaEndService: ArenaEndService,
+    @Inject(forwardRef(() => BotAIService)) // ✅ injetado com forwardRef
+    private readonly botAIService: BotAIService
   ) {}
 
   async playerAction(
@@ -106,6 +109,16 @@ export class ArenaActionService {
     const updatedBattle = this.turnService.switchTurn(battle);
 
     this.battleGateway.server.to(arenaId).emit('battleUpdate', updatedBattle);
+
+    const nextPlayerId = updatedBattle.currentTurnPlayerId;
+    const isBot = Number(nextPlayerId) >= 1000;
+
+    if (isBot) {
+      const target = battle.players.find(p => p.playerId !== nextPlayerId);
+      if (target) {
+        await this.botAIService.executeBotTurn(Number(nextPlayerId), Number(target.playerId));
+      }
+    }
 
     return { message: `Ação ${data.action} executada com sucesso` };
   }
