@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsDefined } from 'class-validator';
 
 export class CreatePlayerDto {
   @IsString()
@@ -7,9 +7,11 @@ export class CreatePlayerDto {
 
   @IsOptional()
   @IsNumber()
-  winners?: number;
+  @IsDefined()
+  winners?: number | null;
 
   @IsOptional()
   @IsNumber()
-  losses?: number;
+  @IsDefined()
+  losses?: number | null;
 }

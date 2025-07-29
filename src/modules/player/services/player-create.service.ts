@@ -14,6 +14,6 @@ export class PlayerCreateService {
       throw new BadRequestException('Informe o nome do jogador');
     }
 
-    return this.playerRepository.create(username, winners, losses);
+    return this.playerRepository.create(username);
   }
 }
