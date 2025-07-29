@@ -28,6 +28,12 @@ import { BotAIService } from './services/bot-ai.service';
     BattleStatsService,
     BotAIService,
   ],
-  exports: [BattleGateway, MatchmakingService, BattleTurnService, BotAIService],
+  exports: [
+    BattleGateway,
+    MatchmakingService,
+    BattleTurnService,
+    BotAIService,
+    BattleRepository,
+  ],
 })
 export class BattleModule {}

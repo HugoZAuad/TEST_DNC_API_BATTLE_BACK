@@ -1,11 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { BattleRepository } from '../repositories/battle.repository';
 import { PlayerRepository } from '../../player/repositories/player.repository';
 
 @Injectable()
 export class BattleEndService {
   constructor(
+    @Inject(forwardRef(() => BattleRepository))
     private readonly battleRepository: BattleRepository,
+
+    @Inject(forwardRef(() => PlayerRepository))
     private readonly playerRepository: PlayerRepository
   ) {}
 
