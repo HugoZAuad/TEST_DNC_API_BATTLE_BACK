@@ -7,7 +7,7 @@ import { ArenaDto } from '../interfaces/dto/arena.dto';
 import { BattleState } from '../../battle/interfaces/interfaces/battle-state.interface';
 import { PlayerState } from '../../battle/interfaces/interfaces/player-state.interface';
 import { MonsterState } from '../../battle/interfaces/interfaces/monster-state.interface';
-import { BotAIService } from '../../battle/services/bot-ai.service'; // ✅ importado
+import { BotAIService } from '../../battle/services/bot-ai.service';
 
 @Injectable()
 export class ArenaActionService {
@@ -16,7 +16,7 @@ export class ArenaActionService {
     private readonly battleGateway: BattleGateway,
     private readonly turnService: BattleTurnService,
     private readonly arenaEndService: ArenaEndService,
-    @Inject(forwardRef(() => BotAIService)) // ✅ injetado com forwardRef
+    @Inject(forwardRef(() => BotAIService))
     private readonly botAIService: BotAIService
   ) {}
 
@@ -24,7 +24,8 @@ export class ArenaActionService {
     arenaId: string,
     data: { player_id: number; action: string; target_id?: number }
   ) {
-    const arena: ArenaDto | undefined = this.arenaCreationService.getArena(arenaId);
+    const arena: ArenaDto | undefined =
+      this.arenaCreationService.getArena(arenaId);
     if (!arena || !arena.battleState) {
       return { error: 'Arena ou estado de batalha não encontrado' };
     }
@@ -37,11 +38,19 @@ export class ArenaActionService {
       return { error: 'Não é o turno do jogador' };
     }
 
-    const attacker: PlayerState | undefined = battle.players.find(p => p.playerId === playerId);
-    const defender: PlayerState | undefined = battle.players.find(p => p.playerId === targetId);
+    const attacker: PlayerState | undefined = battle.players.find(
+      (p) => p.playerId === playerId
+    );
+    const defender: PlayerState | undefined = battle.players.find(
+      (p) => p.playerId === targetId
+    );
 
-    const attackerMonster: MonsterState | undefined = battle.monsters.find(m => m.playerId === playerId);
-    const defenderMonster: MonsterState | undefined = battle.monsters.find(m => m.playerId === targetId);
+    const attackerMonster: MonsterState | undefined = battle.monsters.find(
+      (m) => m.playerId === playerId
+    );
+    const defenderMonster: MonsterState | undefined = battle.monsters.find(
+      (m) => m.playerId === targetId
+    );
 
     if (!attacker || !attackerMonster) {
       return { error: 'Dados do atacante não encontrados' };
@@ -54,34 +63,45 @@ export class ArenaActionService {
         if (!defender || !defenderMonster) {
           return { error: 'Dados do defensor não encontrados' };
         }
-        const damage = Math.max(attackerMonster.attack - defenderMonster.defense, 1);
+        const damage = Math.max(
+          attackerMonster.attack - defenderMonster.defense,
+          1
+        );
         defenderMonster.hp -= damage;
-        log = `${attacker.username} atacou ${defender.username} causando ${damage} de dano!`;
+        log = `🗡️ ${attacker.username} atacou ${defender.username} com ${attackerMonster.name}, causando ${damage} de dano!`;
         break;
       }
 
       case 'defend': {
         attackerMonster.defense += 5;
-        log = `${attacker.username} aumentou sua defesa!`;
+        log = `🛡️ ${attacker.username} aumentou a defesa de ${attackerMonster.name}!`;
         break;
       }
 
       case 'special': {
-        attackerMonster.hp = Math.min(attackerMonster.hp + 20, attackerMonster.maxHp);
-        log = `${attacker.username} usou habilidade especial e se curou!`;
+        attackerMonster.hp = Math.min(
+          attackerMonster.hp + 20,
+          attackerMonster.maxHp
+        );
+        log = `✨ ${attacker.username} usou habilidade especial com ${attackerMonster.name} e se curou!`;
         break;
       }
 
       case 'forfeit': {
         if (!defender || !defenderMonster) {
-          return { error: 'Dados do defensor não encontrados para declarar vencedor' };
+          return {
+            error: 'Dados do defensor não encontrados para declarar vencedor',
+          };
         }
         await this.arenaEndService.endBattle(arenaId, {
-          winner: { player_id: Number(targetId), monster: defenderMonster.name }
+          winner: {
+            player_id: Number(targetId),
+            monster: defenderMonster.name,
+          },
         });
         this.battleGateway.server.to(arenaId).emit('battleEnded', {
           winner: defender.username,
-          reason: 'Desistência'
+          reason: 'Desistência',
         });
         return { message: 'Jogador desistiu da batalha' };
       }
@@ -92,16 +112,16 @@ export class ArenaActionService {
 
     this.battleGateway.server.to(arenaId).emit('battleTurnEnded', {
       actions: [log],
-      currentPlayer: playerId
+      currentPlayer: playerId,
     });
 
     if (defenderMonster && defenderMonster.hp <= 0) {
       await this.arenaEndService.endBattle(arenaId, {
-        winner: { player_id: Number(playerId), monster: attackerMonster.name }
+        winner: { player_id: Number(playerId), monster: attackerMonster.name },
       });
       this.battleGateway.server.to(arenaId).emit('battleEnded', {
         winner: attacker.username,
-        reason: 'HP zerado'
+        reason: 'HP zerado',
       });
       return { message: 'Batalha encerrada' };
     }
@@ -111,12 +131,27 @@ export class ArenaActionService {
     this.battleGateway.server.to(arenaId).emit('battleUpdate', updatedBattle);
 
     const nextPlayerId = updatedBattle.currentTurnPlayerId;
-    const isBot = Number(nextPlayerId) >= 1000;
 
-    if (isBot) {
-      const target = battle.players.find(p => p.playerId !== nextPlayerId);
+    const botMonster = updatedBattle.monsters.find(
+      (m) => m.playerId === nextPlayerId
+    );
+
+    if (botMonster) {
+      const target = updatedBattle.players.find(
+        (p) => p.playerId !== nextPlayerId
+      );
+
       if (target) {
-        await this.botAIService.executeBotTurn(Number(nextPlayerId), Number(target.playerId));
+        const botLog = await this.botAIService.executeBotTurn(
+          arenaId,
+          Number(nextPlayerId),
+          Number(target.playerId)
+        );
+
+        this.battleGateway.server.to(arenaId).emit('battleTurnEnded', {
+          actions: [botLog],
+          currentPlayer: nextPlayerId.toString(),
+        });
       }
     }
 
