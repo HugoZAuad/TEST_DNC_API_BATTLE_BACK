@@ -12,9 +12,12 @@ export class ArenaStateService {
   constructor(
     @Inject(forwardRef(() => ArenaCreationService))
     private readonly arenaCreationService: ArenaCreationService,
+
     private readonly matchmakingService: MatchmakingService,
+
+    @Inject(forwardRef(() => BattleGateway))
     private readonly battleGateway: BattleGateway,
-  ) {}
+  ) { }
 
   openArena(arenaId: string) {
     if (this.arenaStates.has(arenaId)) return;
