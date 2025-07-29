@@ -16,7 +16,7 @@ export class MatchmakingService {
     console.log(`🟡 Adicionando jogador à fila: ${player.username}`);
     this.waitingPlayers.push({
       player,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -24,11 +24,13 @@ export class MatchmakingService {
     this.cleanupExpiredPlayers();
 
     if (this.waitingPlayers.length >= 2) {
-      const players = this.waitingPlayers.splice(0, 2).map(wp => wp.player);
-      console.log(`✅ Match encontrado entre: ${players[0].username} e ${players[1].username}`);
+      const players = this.waitingPlayers.splice(0, 2).map((wp) => wp.player);
+      console.log(
+        `✅ Match encontrado entre: ${players[0].username} e ${players[1].username}`
+      );
       return players;
     }
-
+      
     if (this.waitingPlayers.length === 1) {
       const wp = this.waitingPlayers[0];
       const now = Date.now();
@@ -37,7 +39,9 @@ export class MatchmakingService {
       if (waitTime >= this.BOT_TIMEOUT) {
         this.waitingPlayers.shift();
         const bot = this.getRandomBot();
-        console.log(`🤖 Match com bot: ${wp.player.username} vs ${bot.username}`);
+        console.log(
+          `🤖 Match com bot: ${wp.player.username} vs ${bot.username}`
+        );
         return [wp.player, bot];
       }
     }
@@ -48,7 +52,9 @@ export class MatchmakingService {
   private cleanupExpiredPlayers() {
     const MAX_WAIT = 60000; // 1 minuto
     const now = Date.now();
-    this.waitingPlayers = this.waitingPlayers.filter(wp => now - wp.timestamp < MAX_WAIT);
+    this.waitingPlayers = this.waitingPlayers.filter(
+      (wp) => now - wp.timestamp < MAX_WAIT
+    );
   }
 
   private getRandomBot(): PlayerState {
@@ -56,7 +62,7 @@ export class MatchmakingService {
     return {
       ...rawBot,
       playerId: `bot-${Math.floor(Math.random() * 10000)}`,
-      isBot: true
+      isBot: true,
     };
   }
 }

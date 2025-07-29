@@ -23,7 +23,7 @@ export class BotAIService {
     const targetPlayer = battle.players.find((p) => p.playerId === targetId);
     const targetMonster = battle.monsters.find((m) => m.playerId === targetId);
 
-    const botData = bots.find((b) => b.playerId === botId); // ✅ busca na lista
+    const botData = bots.find((b) => b.playerId === botId);
 
     if (!botMonster || !targetPlayer || !targetMonster || !botData) {
       return '⚠️ Dados do bot ou alvo não encontrados.';

@@ -9,6 +9,7 @@ import { Server, Socket } from 'socket.io';
 import { Injectable } from '@nestjs/common';
 import { MatchmakingService } from '../services/matchmaking.service';
 import { PlayerState } from '../interfaces/interfaces/player-state.interface';
+import { ArenaCreationService } from '../../arena/services/arena-creation.service';
 
 @WebSocketGateway({
   cors: {
@@ -27,32 +28,39 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private playerSocketMap = new Map<string, Socket>();
 
-  constructor(private readonly matchmakingService: MatchmakingService) {}
+  constructor(
+    private readonly matchmakingService: MatchmakingService,
+    private readonly arenaCreationService: ArenaCreationService
+  ) {}
 
-  handleConnection(client: Socket) {}
+  handleConnection(client: Socket) {
+    console.log(`🔌 Cliente conectado: ${client.id}`);
+  }
 
   handleDisconnect(client: Socket) {
     for (const [playerId, socket] of this.playerSocketMap.entries()) {
       if (socket.id === client.id) {
         this.playerSocketMap.delete(playerId);
+        console.log(`❌ Cliente desconectado: ${playerId}`);
         break;
       }
     }
   }
 
   @SubscribeMessage('playerAvailable')
-  handlePlayerAvailable(client: Socket, data: any) {
+  async handlePlayerAvailable(client: Socket, data: any) {
     try {
       if (!data || !data.playerId) {
         client.emit('error', { message: 'playerId is required' });
         return;
       }
 
-      this.playerSocketMap.set(data.playerId.toString(), client);
+      const playerId = data.playerId.toString();
+      this.playerSocketMap.set(playerId, client);
 
       const player: PlayerState = {
-        playerId: data.playerId.toString(),
-        username: data.username || `Jogador ${data.playerId}`, // ✅ campo obrigatório adicionado
+        playerId,
+        username: data.username || `Jogador ${playerId}`,
         hp: 100,
         attack: 10,
         defense: 5,
@@ -67,23 +75,37 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const match = this.matchmakingService.getMatch();
       if (match) {
-        const battleId = `battle-${Date.now()}`;
+        const arenaId = `arena-${Date.now()}`;
+        const arena = this.arenaCreationService.createArena(arenaId, match);
 
         match.forEach((p) => {
           const socket = this.getSocketByPlayerId(p.playerId);
           if (socket) {
-            socket.join(battleId);
+            socket.join(arenaId);
+            socket.emit('matchFound', { arenaId, players: match });
           }
         });
 
-        this.server
-          .to(battleId)
-          .emit('battleStarted', { battleId, players: match });
+        this.server.to(arenaId).emit('battleStarted', {
+          arenaId,
+          battleState: arena.battleState,
+        });
       }
 
       client.emit('availableConfirmed');
     } catch (error) {
+      console.error('Erro no matchmaking:', error);
       client.emit('error', { message: 'Internal server error' });
+    }
+  }
+
+  @SubscribeMessage('startBattle')
+  async handleStartBattle(client: Socket, data: any) {
+    const battleId = data.battleId;
+    if (battleId) {
+      this.server.to(battleId).emit('battleStarted', { battleState: data });
+    } else {
+      client.emit('error', { message: 'battleId is required to start battle' });
     }
   }
 
@@ -91,17 +113,12 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return this.playerSocketMap.get(playerId);
   }
 
-  public async handleAttack(data: any, client: Socket) {
-    client.emit('battleUpdate', {});
-  }
-
-  @SubscribeMessage('startBattle')
-  public async handleStartBattle(client: Socket, data: any) {
-    const battleId = data.battleId;
-    if (battleId) {
-      this.server.to(battleId).emit('battleStarted', { battleState: data });
-    } else {
-      client.emit('error', { message: 'battleId is required to start battle' });
-    }
+  @SubscribeMessage('battleAction')
+  async handleBattleAction(client: Socket, data: any) {
+    this.server.to(data.arenaId).emit('battleUpdate', {
+      action: data.action,
+      from: data.playerId,
+      to: data.target_id,
+    });
   }
 }
