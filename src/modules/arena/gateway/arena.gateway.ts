@@ -23,7 +23,7 @@ import { ArenaDto } from '../../arena/interfaces/dto/arena.dto';
   },
 })
 @Injectable()
-export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ArenaGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
