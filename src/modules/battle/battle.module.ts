@@ -9,14 +9,13 @@ import { BattleStatsService } from './services/battle-stats.service';
 import { PlayerModule } from '../player/player.module';
 import { MonsterModule } from '../monster/monster.module';
 import { BotAIService } from './services/bot-ai.service';
+import { ArenaModule } from '../arena/arena.module';
 
 @Module({
   imports: [
     forwardRef(() => PlayerModule),
     forwardRef(() => MonsterModule),
-    forwardRef(() =>
-      import('../arena/arena.module').then((m) => m.ArenaModule)
-    ),
+    forwardRef(() => ArenaModule),
   ],
   providers: [
     BattleGateway,
