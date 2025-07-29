@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PlayerState } from '../interfaces/interfaces/player-state.interface';
 import { BattleState } from '../interfaces/interfaces/battle-state.interface';
+import { MonsterState } from '../interfaces/interfaces/monster-state.interface';
 import { bots } from '../constants/bots';
 
 @Injectable()
@@ -12,12 +13,24 @@ export class BattleRepository {
   }
 
   createBattle(battleId: string, players: PlayerState[]) {
-    this.battles.set(battleId, {
+    const monsters: MonsterState[] = players.map(player => ({
+      playerId: player.playerId,
+      name: `Monstro de ${player.username}`,
+      hp: player.hp,
+      maxHp: player.hp,
+      attack: player.attack,
+      defense: player.defense,
+    }));
+
+    const battleState: BattleState = {
       id: battleId,
       players,
+      monsters,
       currentTurnPlayerId: this.getFastestPlayer(players).playerId,
       isBattleActive: true,
-    });
+    };
+
+    this.battles.set(battleId, battleState);
   }
 
   getBattle(battleId: string): BattleState | undefined {

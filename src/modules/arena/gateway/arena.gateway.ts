@@ -106,7 +106,7 @@ export class ArenaGateway {
     return this.arenaActionService.playerAction(data.arenaId, {
       player_id: data.player_id,
       action: data.action,
-      target_id: data.target_id,
+      target_id: data.target_id ? Number(data.target_id) : undefined,
     });
   }
 

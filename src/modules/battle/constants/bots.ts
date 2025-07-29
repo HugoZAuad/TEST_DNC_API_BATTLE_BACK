@@ -3,6 +3,7 @@ import { PlayerState } from '../interfaces/interfaces/player-state.interface';
 export const bots: PlayerState[] = [
   {
     playerId: 'bot1',
+    username: 'Bot Alpha',
     hp: 100,
     attack: 15,
     defense: 5,
@@ -14,6 +15,7 @@ export const bots: PlayerState[] = [
   },
   {
     playerId: 'bot2',
+    username: 'Bot Bravo',
     hp: 90,
     attack: 18,
     defense: 4,
@@ -25,6 +27,7 @@ export const bots: PlayerState[] = [
   },
   {
     playerId: 'bot3',
+    username: 'Bot Charlie',
     hp: 110,
     attack: 12,
     defense: 6,
@@ -36,6 +39,7 @@ export const bots: PlayerState[] = [
   },
   {
     playerId: 'bot4',
+    username: 'Bot Delta',
     hp: 95,
     attack: 14,
     defense: 7,
@@ -47,6 +51,7 @@ export const bots: PlayerState[] = [
   },
   {
     playerId: 'bot5',
+    username: 'Bot Echo',
     hp: 105,
     attack: 13,
     defense: 5,
@@ -58,6 +63,7 @@ export const bots: PlayerState[] = [
   },
   {
     playerId: 'bot6',
+    username: 'Bot Foxtrot',
     hp: 100,
     attack: 16,
     defense: 6,
