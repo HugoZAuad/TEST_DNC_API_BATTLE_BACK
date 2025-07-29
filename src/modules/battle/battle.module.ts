@@ -8,6 +8,7 @@ import { BattleRepository } from './repositories/battle.repository';
 import { BattleStatsService } from './services/battle-stats.service';
 import { PlayerModule } from '../player/player.module';
 import { MonsterModule } from '../monster/monster.module';
+import { BotAIService } from './services/bot-ai.service';
 
 @Module({
   imports: [
@@ -25,7 +26,8 @@ import { MonsterModule } from '../monster/monster.module';
     BattleSurrenderService,
     BattleRepository,
     BattleStatsService,
+    BotAIService,
   ],
-  exports: [BattleGateway, MatchmakingService, BattleTurnService],
+  exports: [BattleGateway, MatchmakingService, BattleTurnService, BotAIService],
 })
 export class BattleModule {}

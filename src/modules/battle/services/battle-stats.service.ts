@@ -10,7 +10,7 @@ export class BattleStatsService {
     }
   }
 
-  recordVictory(playerId: string) {
+  async recordVictory(playerId: string): Promise<void> {
     this.ensurePlayerStats(playerId);
     const stats = this.playerStats.get(playerId);
     if (stats) {
@@ -18,7 +18,7 @@ export class BattleStatsService {
     }
   }
 
-  recordDefeat(playerId: string) {
+  async recordDefeat(playerId: string): Promise<void> {
     this.ensurePlayerStats(playerId);
     const stats = this.playerStats.get(playerId);
     if (stats) {
@@ -26,7 +26,7 @@ export class BattleStatsService {
     }
   }
 
-  recordSurrender(playerId: string) {
+  async recordSurrender(playerId: string): Promise<void> {
     this.ensurePlayerStats(playerId);
     const stats = this.playerStats.get(playerId);
     if (stats) {
@@ -34,8 +34,8 @@ export class BattleStatsService {
     }
   }
 
-  getStats(playerId: string) {
+  async getStats(playerId: string): Promise<{ victories: number; defeats: number; surrenders: number }> {
     this.ensurePlayerStats(playerId);
-    return this.playerStats.get(playerId);
+    return this.playerStats.get(playerId)!;
   }
 }
