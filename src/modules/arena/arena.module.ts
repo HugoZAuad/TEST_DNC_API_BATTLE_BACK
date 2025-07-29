@@ -11,6 +11,7 @@ import { ArenaLeaveService } from './services/arena-leave.service';
 import { ArenaStartService } from './services/arena-start.service';
 import { ArenaEndService } from './services/arena-end.service';
 import { ArenaStateService } from './services/arena-state.service';
+import { BattleEndService } from '../battle/services/battle-end.service';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ArenaStateService } from './services/arena-state.service';
     ArenaStartService,
     ArenaEndService,
     ArenaStateService,
+    BattleEndService,
   ],
   exports: [
     ArenaGateway,
@@ -38,6 +40,7 @@ import { ArenaStateService } from './services/arena-state.service';
     ArenaStartService,
     ArenaEndService,
     ArenaStateService,
+    BattleEndService,
   ],
 })
 export class ArenaModule {}
