@@ -13,7 +13,9 @@ import { MonsterModule } from '../monster/monster.module';
   imports: [
     forwardRef(() => PlayerModule),
     forwardRef(() => MonsterModule),
-    forwardRef(() => import('../arena/arena.module').then(m => m.ArenaModule)),
+    forwardRef(() =>
+      import('../arena/arena.module').then((m) => m.ArenaModule)
+    ),
   ],
   providers: [
     BattleGateway,
@@ -24,6 +26,6 @@ import { MonsterModule } from '../monster/monster.module';
     BattleRepository,
     BattleStatsService,
   ],
-  exports: [BattleGateway, MatchmakingService],
+  exports: [BattleGateway, MatchmakingService, BattleTurnService],
 })
 export class BattleModule {}
