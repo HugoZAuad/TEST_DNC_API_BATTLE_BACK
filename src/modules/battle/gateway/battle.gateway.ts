@@ -47,9 +47,12 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.emit('error', { message: 'playerId is required' });
         return;
       }
+
       this.playerSocketMap.set(data.playerId.toString(), client);
+
       const player: PlayerState = {
         playerId: data.playerId.toString(),
+        username: data.username || `Jogador ${data.playerId}`, // ✅ campo obrigatório adicionado
         hp: 100,
         attack: 10,
         defense: 5,
@@ -59,20 +62,23 @@ export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+
       this.matchmakingService.addPlayer(player);
 
       const match = this.matchmakingService.getMatch();
       if (match) {
         const battleId = `battle-${Date.now()}`;
 
-        match.forEach(p => {
+        match.forEach((p) => {
           const socket = this.getSocketByPlayerId(p.playerId);
           if (socket) {
             socket.join(battleId);
           }
         });
 
-        this.server.to(battleId).emit('battleStarted', { battleId, players: match });
+        this.server
+          .to(battleId)
+          .emit('battleStarted', { battleId, players: match });
       }
 
       client.emit('availableConfirmed');
