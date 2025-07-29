@@ -1,122 +1,162 @@
 import {
   WebSocketGateway,
   SubscribeMessage,
-  MessageBody,
   WebSocketServer,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { ArenaCreationService } from '../services/arena-creation.service';
-import { ArenaJoinService } from '../services/arena-join.service';
-import { ArenaLeaveService } from '../services/arena-leave.service';
-import { ArenaStartService } from '../services/arena-start.service';
-import { ArenaEndService } from '../services/arena-end.service';
-import { ArenaActionService } from '../services/arena-action.service';
-import { ArenaStateService } from '../services/arena-state.service';
-import { CreateArenaDto } from '../interfaces/dto/create-arena.dto';
+import { Injectable } from '@nestjs/common';
+import { MatchmakingService } from '../../battle/services/matchmaking.service';
+import { PlayerState } from '../../battle/interfaces/interfaces/player-state.interface';
+import { ArenaCreationService } from '../../arena/services/arena-creation.service';
+import { ArenaDto } from '../../arena/interfaces/dto/arena.dto';
 
 @WebSocketGateway({
-  namespace: '/arena',
   cors: {
-    origin: process.env.CORS_ORIGINS,
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'https://test-dnc-api-battle-front.vercel.app',
+    ],
     credentials: true,
   },
 })
-export class ArenaGateway {
-  constructor(
-    private readonly arenaCreationService: ArenaCreationService,
-    private readonly arenaJoinService: ArenaJoinService,
-    private readonly arenaLeaveService: ArenaLeaveService,
-    private readonly arenaStartService: ArenaStartService,
-    private readonly arenaEndService: ArenaEndService,
-    private readonly arenaActionService: ArenaActionService,
-    private readonly arenaStateService: ArenaStateService
-  ) {}
-
+@Injectable()
+export class BattleGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  @SubscribeMessage('createArena')
-  createArena(@MessageBody() data: CreateArenaDto) {
-    const arena = this.arenaCreationService.createArena({
-      name: data.name,
-      max_players: data.players?.length || 2,
-    });
-    this.server.emit('arenaCreated', arena);
-    return arena;
+  private playerSocketMap = new Map<string, Socket>();
+
+  constructor(
+    private readonly matchmakingService: MatchmakingService,
+    private readonly arenaCreationService: ArenaCreationService
+  ) {}
+
+  handleConnection(client: Socket) {
+    console.log(`🔌 Cliente conectado: ${client.id}`);
   }
 
-  @SubscribeMessage('joinArena')
-  joinArena(
-    @MessageBody()
-    data: {
-      arenaId: string;
-      player_id: number;
-      monster_id: number;
-    },
-    client: Socket
-  ) {
-    const result = this.arenaJoinService.joinArena(data.arenaId, {
-      player_id: data.player_id,
-      monster_id: data.monster_id,
-    });
-    client.join(data.arenaId);
-    this.server.to(data.arenaId).emit('playerJoined', result);
-    return result;
+  handleDisconnect(client: Socket) {
+    for (const [playerId, socket] of this.playerSocketMap.entries()) {
+      if (socket.id === client.id) {
+        this.playerSocketMap.delete(playerId);
+        console.log(`❌ Cliente desconectado: ${playerId}`);
+        break;
+      }
+    }
   }
 
-  @SubscribeMessage('leaveArena')
-  leaveArena(@MessageBody() data: { arenaId: string; player_id: number }) {
-    const result = this.arenaLeaveService.leaveArena(data.arenaId, {
-      player_id: data.player_id,
-    });
-    this.server.emit('playerLeft', result);
-    return result;
+  @SubscribeMessage('playerAvailable')
+  async handlePlayerAvailable(client: Socket, data: any) {
+    try {
+      if (!data || !data.playerId) {
+        client.emit('error', { message: 'playerId is required' });
+        return;
+      }
+
+      const playerId = data.playerId.toString();
+      this.playerSocketMap.set(playerId, client);
+
+      const player: PlayerState = {
+        playerId,
+        username: data.username || `Jogador ${playerId}`,
+        hp: 100,
+        attack: 10,
+        defense: 5,
+        speed: 10,
+        specialAbility: 'None',
+        isBot: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      this.matchmakingService.addPlayer(player);
+
+      const match = this.matchmakingService.getMatch();
+      if (match) {
+        const arenaId = `arena-${Date.now()}`;
+        const arena: ArenaDto = this.arenaCreationService.createArena(arenaId, match);
+
+        match.forEach((p) => {
+          const socket = this.getSocketByPlayerId(p.playerId);
+          if (socket) {
+            socket.join(arenaId);
+            socket.emit('matchFound', { arenaId, players: match });
+          }
+        });
+
+        this.server.to(arenaId).emit('battleStarted', {
+          arenaId,
+          battleState: arena.battleState,
+        });
+      }
+
+      client.emit('availableConfirmed');
+    } catch (error) {
+      console.error('Erro no matchmaking:', error);
+      client.emit('error', { message: 'Internal server error' });
+    }
   }
 
   @SubscribeMessage('startBattle')
-  startBattle(@MessageBody() data: { arenaId: string }) {
-    const result = this.arenaStartService.startBattle(data.arenaId);
-    this.server.to(data.arenaId).emit('battleStarted', result);
-    return result;
+  async handleStartBattle(client: Socket, data: any) {
+    const battleId = data.battleId;
+    if (battleId) {
+      this.server.to(battleId).emit('battleStarted', { battleState: data });
+    } else {
+      client.emit('error', { message: 'battleId is required to start battle' });
+    }
   }
 
-  @SubscribeMessage('endBattle')
-  endBattle(
-    @MessageBody()
-    data: {
-      arenaId: string;
-      winner: { player_id: number; monster: string };
-    }
-  ) {
-    const result = this.arenaEndService.endBattle(data.arenaId, data);
-    this.server.emit('battleEnded', result);
-    return result;
-  }
-
-  @SubscribeMessage('playerAction')
-  playerAction(
-    @MessageBody()
-    data: {
-      arenaId: string;
-      player_id: number;
-      action: string;
-      target_id?: string;
-    }
-  ) {
-    return this.arenaActionService.playerAction(data.arenaId, {
-      player_id: data.player_id,
+  @SubscribeMessage('battleAction')
+  async handleBattleAction(client: Socket, data: any) {
+    this.server.to(data.arenaId).emit('battleUpdate', {
       action: data.action,
-      target_id: data.target_id ? Number(data.target_id) : undefined,
+      from: data.playerId,
+      to: data.target_id,
     });
   }
 
-  @SubscribeMessage('getArenaState')
-  getArenaState(@MessageBody() data: { arenaId: string }) {
-    const isOpen = this.arenaStateService.isArenaOpen(data.arenaId);
-    const arena = this.arenaCreationService.getArena(data.arenaId);
-    return {
-      isOpen,
-      arena,
-    };
+  @SubscribeMessage('attack')
+  async handleAttack(client: Socket, data: { arenaId: string; attackerId: string; targetId: string }) {
+    const { arenaId, attackerId, targetId } = data;
+
+    const arena = this.arenaCreationService.getArena(arenaId);
+    if (!arena) {
+      client.emit('error', { message: 'Arena não encontrada' });
+      return;
+    }
+
+    const attacker = arena.battleState.players.find(p => p.playerId === attackerId);
+    const target = arena.battleState.monsters.find(m => m.playerId === targetId);
+
+    if (!attacker || !target) {
+      client.emit('error', { message: 'Atacante ou alvo inválido' });
+      return;
+    }
+
+    const damage = Math.max(attacker.attack - target.defense, 1);
+    target.hp = Math.max(target.hp - damage, 0);
+
+    this.server.to(arenaId).emit('battleUpdate', {
+      type: 'attack',
+      attackerId,
+      targetId,
+      damage,
+      targetHp: target.hp,
+    });
+
+    if (target.hp === 0) {
+      this.server.to(arenaId).emit('monsterDefeated', {
+        targetId,
+        message: `${target.name} foi derrotado!`,
+      });
+    }
+  }
+
+  public getSocketByPlayerId(playerId: string): Socket | undefined {
+    return this.playerSocketMap.get(playerId);
   }
 }
